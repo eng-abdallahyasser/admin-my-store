@@ -1,6 +1,7 @@
 import 'package:admin_my_store/app/bindings/auth_binding.dart';
 import 'package:get/get.dart';
 import 'package:admin_my_store/app/views/home/home_screen.dart';
+import '../bindings/product_binding.dart';
 import '../views/auth/login_screen.dart';
 import '../views/products/product_list_screen.dart';
 import 'app_routes.dart';
@@ -19,7 +20,7 @@ class AppPages {
     GetPage(
       name: Routes.products,
       page: () => ProductListScreen(),
-      // binding: ProductBinding(),
+      binding: ProductBinding(),
     ),
     // GetPage(
     //   name: Routes.orders,

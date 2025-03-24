@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
+
+import '../../routes/app_routes.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -11,7 +15,9 @@ class HomeScreen extends StatelessWidget {
         crossAxisCount: 2,
         padding: const EdgeInsets.all(10),
         children: [
-          _buildTile("Products", Icons.shopping_bag, () {}),
+          _buildTile("Products", Icons.shopping_bag, () {
+            Get.toNamed(Routes.products);
+          }),
           _buildTile("Orders", Icons.receipt, () {}),
           _buildTile("Categories", Icons.category, () {}),
           _buildTile("Customers", Icons.people, () {}),

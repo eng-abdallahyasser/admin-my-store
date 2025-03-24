@@ -54,10 +54,6 @@ class AuthRepository {
     }
   }
 
-  Future<void> signOut() async => await _firebaseAuth.signOut();
-
-  signInWithEmailAndPassword(String trim, String trim2) {}
-
   Future<User?> userData() async {
     return _firebaseAuth.currentUser;
   }

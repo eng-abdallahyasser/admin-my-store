@@ -11,7 +11,7 @@ class ProductRepository {
     try {
       final snapshot = await _firestore
           .collection('products')
-          .orderBy('createdAt', descending: true)
+          // .orderBy('createdAt', descending: true)
           .get();
       return snapshot.docs.map((doc) => Product.fromFirestore(doc)).toList();
     } catch (e) {

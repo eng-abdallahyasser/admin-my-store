@@ -7,7 +7,7 @@ class CategoryCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
-  const CategoryCard({
+  const CategoryCard({super.key,
     required this.category,
     required this.onEdit,
     required this.onDelete,

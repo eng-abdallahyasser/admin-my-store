@@ -1,4 +1,5 @@
 // product_controller.dart
+import 'dart:developer';
 import 'dart:typed_data';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -161,13 +162,11 @@ class ProductController extends GetxController {
 
   void pickAdditionalImages() async {
     final pickedFiles = await ImagePicker().pickMultiImage();
-    if (pickedFiles != null) {
-      for (var file in pickedFiles) {
-        final bytes = await file.readAsBytes();
-        additionalImages.add(bytes);
-      }
+    for (var file in pickedFiles) {
+      final bytes = await file.readAsBytes();
+      additionalImages.add(bytes);
     }
-  }
+    }
 
   void addOption(Option option) {
     options.add(option);

@@ -106,9 +106,15 @@ class ProductCard extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(4))),
       child: product.coverImageUnit8List != null
           ? Image.memory(product.coverImageUnit8List!, fit: BoxFit.cover)
-          : product.imagesUrl.isNotEmpty
-              ? Image.network(product.imagesUrl.first, fit: BoxFit.cover)
-              : const Placeholder(),
-    );
+          : FutureBuilder(future: product.fetchCoverImage(), builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              return Image.memory(product.coverImageUnit8List!, fit: BoxFit.cover);
+            }else if (snapshot.hasError) {
+              return Center(child: Text("Error: ${snapshot.error}"));
+            }
+            else {
+              return const Center(child: CircularProgressIndicator());
+            }
+      }));
   }
 }

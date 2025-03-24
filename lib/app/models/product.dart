@@ -1,9 +1,11 @@
+import 'dart:developer';
 import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:admin_my_store/app/models/option.dart';
 import 'package:admin_my_store/app/models/variant.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class Product {
   String id;
@@ -63,11 +65,15 @@ class Product {
     return colorsStringList;
   }
 
-  Future<Product> initializeCoverImage() async {
-    //TODO : initialaze cover image
-    // coverImageUnit8List = await Repo.getProductImageUrl(imagesUrl[0]);
-    isInitialezed = true;
-    return this;
+  Future<Product?> fetchCoverImage() async {
+    coverImageUnit8List = await FirebaseStorage.instance.ref().child(imagesUrl[0]).getData();
+    try {
+      isInitialezed = true;
+      return this;
+    } catch (e) {
+      log('Failed to get profile picture for uid ${imagesUrl[0]}: $e');
+      return null;
+    }
   }
 
   double calculateTotalCost(){

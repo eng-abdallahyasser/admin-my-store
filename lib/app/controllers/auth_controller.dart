@@ -12,6 +12,12 @@ class AuthController extends GetxController {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
+  @override
+  void onInit() {
+    super.onInit();
+    checkUserLoggedIn();
+  }
+
   void togglePasswordVisibility() {
     obscurePassword(!obscurePassword.value);
   }
@@ -19,7 +25,7 @@ class AuthController extends GetxController {
   Future<void> login() async {
     try {
       isLoading(true);
-      await _authRepository.signInWithEmailAndPassword(
+      await _authRepository.signInWithEmail(
         emailController.text.trim(),
         passwordController.text.trim(),
       );
@@ -69,9 +75,6 @@ class AuthController extends GetxController {
       if (user != null) {
         // User is signed in, navigate to home
         Get.offAllNamed(Routes.home);
-      } else {
-        // User is not signed in, stay on login screen
-        // Get.offAllNamed(Routes.login);
       }
     });
   }
