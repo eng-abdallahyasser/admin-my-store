@@ -1,5 +1,4 @@
 // product_controller.dart
-import 'dart:developer';
 import 'dart:typed_data';
 import 'package:admin_my_store/app/models/variant.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -76,7 +75,7 @@ class ProductController extends GetxController {
       
       // Upload images
       final coverUrl = await _uploadImage(coverImage.value!, 'cover');
-      final List<String> additionalUrls = [];
+      final List<String> additionalUrls = [coverUrl];
       for (var image in additionalImages) {
         final url = await _uploadImage(image, 'gallery');
         additionalUrls.add(url);
@@ -89,7 +88,7 @@ class ProductController extends GetxController {
         description: descriptionController.text,
         category: selectedCategory.value,
         price: double.parse(priceController.text),
-        oldPrice: double.tryParse(oldPriceController.text)!,
+        oldPrice: double.tryParse(oldPriceController.text)??0.0,
         imagesUrl: additionalUrls,
         colors: selectedColors,
         options: options,
@@ -206,7 +205,7 @@ class ProductController extends GetxController {
       titleController.text = product.title;
       descriptionController.text = product.description;
       priceController.text = product.price.toString();
-      oldPriceController.text = product.oldPrice?.toString() ?? '';
+      oldPriceController.text = product.oldPrice.toString();
       selectedCategory.value = product.category;
       selectedColors.value = product.colors;
       options.value = product.options;

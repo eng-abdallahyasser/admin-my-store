@@ -1,4 +1,3 @@
-import 'package:admin_my_store/app/models/category.dart';
 import 'package:admin_my_store/app/models/variant.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -7,6 +6,8 @@ import 'package:admin_my_store/app/controllers/product_controller.dart';
 import 'package:admin_my_store/app/models/option.dart';
 
 class AddProductScreen extends StatefulWidget {
+  const AddProductScreen({super.key});
+
   @override
   _AddProductScreenState createState() => _AddProductScreenState();
 }
@@ -354,13 +355,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   Future<void> _pickAdditionalImages() async {
     final pickedFiles = await _picker.pickMultiImage();
-    if (pickedFiles != null) {
-      for (var file in pickedFiles) {
-        final bytes = await file.readAsBytes();
-        _controller.additionalImages.add(bytes);
-      }
+    for (var file in pickedFiles) {
+      final bytes = await file.readAsBytes();
+      _controller.additionalImages.add(bytes);
     }
-  }
+    }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {

@@ -2,17 +2,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:admin_my_store/app/models/category.dart';
 import 'package:admin_my_store/app/models/product.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ProductRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<List<Product>> getAllProducts() async {
     try {
-      final snapshot = await _firestore
-          .collection('products')
-          // .orderBy('createdAt', descending: true)
-          .get();
+      final snapshot =
+          await _firestore
+              .collection('products')
+              // .orderBy('createdAt', descending: true)
+              .get();
       return snapshot.docs.map((doc) => Product.fromFirestore(doc)).toList();
     } catch (e) {
       throw Exception('Failed to fetch products: $e');
@@ -24,7 +26,10 @@ class ProductRepository {
       final docRef = await _firestore.collection('products').add({
         ...product.toJson(),
         'createdAt': FieldValue.serverTimestamp(),
+        'added by': _auth.currentUser!.uid,
       });
+
+      await docRef.update({"id": docRef.id});
       return docRef.id;
     } catch (e) {
       throw Exception('Failed to add product: $e');
