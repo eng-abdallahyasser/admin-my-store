@@ -1,4 +1,5 @@
 import 'package:admin_my_store/app/models/category.dart';
+import 'package:admin_my_store/app/models/variant.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -26,9 +27,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
           child: Column(
             children: [
               _buildCoverImageField(),
-              _buildTextField('Title', (value) => _controller.titleController.text = value),
               _buildTextField(
-                  'Description', (value) => _controller.descriptionController.text = value),
+                'Title',
+                (value) => _controller.titleController.text = value,
+              ),
+              _buildTextField(
+                'Description',
+                (value) => _controller.descriptionController.text = value,
+              ),
               _buildPriceFields(),
               _buildCategoryDropdown(),
               _buildColorSelection(),
@@ -49,16 +55,17 @@ class _AddProductScreenState extends State<AddProductScreen> {
   Widget _buildCoverImageField() {
     return GestureDetector(
       onTap: _pickCoverImage,
-      child: Obx(() => Container(
-            height: 200,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey),
-            ),
-            child: _controller.coverImage.value != null
-                ? Image.memory(_controller.coverImage.value!)
-                : const Icon(Icons.add_a_photo, size: 50),
-          )),
+      child: Obx(
+        () => Container(
+          height: 200,
+          width: double.infinity,
+          decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
+          child:
+              _controller.coverImage.value != null
+                  ? Image.memory(_controller.coverImage.value!)
+                  : const Icon(Icons.add_a_photo, size: 50),
+        ),
+      ),
     );
   }
 
@@ -102,18 +109,22 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   Widget _buildCategoryDropdown() {
-    return Obx(() => DropdownButtonFormField<String>(
-          items: _controller.categories
-              .map((category) => DropdownMenuItem(
+    return Obx(
+      () => DropdownButtonFormField<String>(
+        items:
+            _controller.categories
+                .map(
+                  (category) => DropdownMenuItem(
                     value: category.name,
                     child: Text(category.name),
-                  ))
-              .toList(),
-          onChanged: (value) => _controller.selectedCategory.value = value!,
-          decoration: const InputDecoration(labelText: 'Category'),
-          validator: (value) =>
-              value == null ? 'Please select a category' : null,
-        ));
+                  ),
+                )
+                .toList(),
+        onChanged: (value) => _controller.selectedCategory.value = value!,
+        decoration: const InputDecoration(labelText: 'Category'),
+        validator: (value) => value == null ? 'Please select a category' : null,
+      ),
+    );
   }
 
   Widget _buildColorSelection() {
@@ -123,21 +134,25 @@ class _AddProductScreenState extends State<AddProductScreen> {
         const Text('Colors', style: TextStyle(fontSize: 16)),
         Wrap(
           spacing: 8,
-          children: Colors.primaries.map((color) {
-            return GestureDetector(
-              onTap: () => _controller.toggleColor(color),
-              child: Obx(() => Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: color,
-                      border: _controller.selectedColors.contains(color)
-                          ? Border.all(color: Colors.black, width: 2)
-                          : null,
+          children:
+              Colors.primaries.map((color) {
+                return GestureDetector(
+                  onTap: () => _controller.toggleColor(color),
+                  child: Obx(
+                    () => Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: color,
+                        border:
+                            _controller.selectedColors.contains(color)
+                                ? Border.all(color: Colors.black, width: 2)
+                                : null,
+                      ),
                     ),
-                  )),
-            );
-          }).toList(),
+                  ),
+                );
+              }).toList(),
         ),
       ],
     );
@@ -151,49 +166,150 @@ class _AddProductScreenState extends State<AddProductScreen> {
             const Text('Product Options', style: TextStyle(fontSize: 16)),
             IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => _controller.addOption(Option(
-                  min: 1,
-                  max: 2,
-                  optionName: 'option name',
-                  choosedVariant: [],
-                  variants: [])),
+              onPressed:
+                  () => _controller.addOption(
+                    Option(
+                      min: 1,
+                      max: 1,
+                      optionName: 'option ${_controller.options.length}',
+                      choosedVariant: [],
+                      variants: [],
+                    ),
+                  ),
             ),
           ],
         ),
-        Obx(() => Column(
-              children: _controller.options
-                  .map((option) => _buildOptionForm(option))
-                  .toList(),
-            )),
+        Obx(
+          () => Column(
+            children:
+                _controller.options
+                    .map((option) => _buildOptionForm(option))
+                    .toList(),
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildOptionForm(Option option) {
+    final TextEditingController variantNameController = TextEditingController();
+    final TextEditingController variantPriceController =
+        TextEditingController();
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(8),
         child: Column(
           children: [
-            TextFormField(
-              decoration: const InputDecoration(labelText: 'Option Name'),
-              onChanged: (value) => option.optionName = value,
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    decoration: const InputDecoration(labelText: 'Option Name'),
+                    initialValue: "option ${_controller.options.length}",
+                    onChanged: (value) => option.optionName = value,
+                  ),
+                ),
+                IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed:
+                            () => _controller.options.remove(option),
+                      ),
+              ],
             ),
             Row(
               children: [
                 Expanded(
-                    child: TextFormField(
-                  decoration: const InputDecoration(labelText: 'Min'),
-                  onChanged: (value) => option.min = int.parse(value),
-                )),
+                  child: TextFormField(
+                    decoration: const InputDecoration(labelText: 'Min'),
+                    keyboardType: TextInputType.number,
+                    initialValue: option.min.toString(),
+                    onChanged: (value) => option.min = int.tryParse(value) ?? 0,
+                  ),
+                ),
                 Expanded(
-                    child: TextFormField(
-                  decoration: const InputDecoration(labelText: 'Max'),
-                  onChanged: (value) => option.max = int.parse(value),
-                )),
+                  child: TextFormField(
+                    decoration: const InputDecoration(labelText: 'Max'),
+                    keyboardType: TextInputType.number,
+                    initialValue: option.max.toString(),
+                    onChanged: (value) => option.max = int.tryParse(value) ?? 0,
+                  ),
+                ),
               ],
             ),
-            // Add variant creation UI here
+            const SizedBox(height: 16),
+            // Variant Creation UI
+            const Text(
+              'Variants',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Obx(
+              () => Column(
+                children: [
+                  ...option.variants.map(
+                    (variant) => ListTile(
+                      title: Text(variant.name),
+                      subtitle: Text('\$${variant.price.toStringAsFixed(2)}'),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed:
+                            () => _controller.removeVariant(
+                              variant,
+                              option.optionName,
+                            ),
+                      ),
+                    ),
+                  ),
+                  if (_controller.variants.isNotEmpty)
+                    const Divider(),
+                ],
+              ),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: TextFormField(
+                    controller: variantNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Variant Name',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 2,
+                  child: TextFormField(
+                    controller: variantPriceController,
+                    decoration: const InputDecoration(labelText: 'Price'),
+                    keyboardType: TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: () {
+                    if (variantNameController.text.isNotEmpty &&
+                        variantPriceController.text.isNotEmpty) {
+                      _controller.addVariants(
+                        Variant(
+                          id: DateTime.now().microsecondsSinceEpoch.toString(),
+                          name: variantNameController.text,
+                          price:
+                              double.tryParse(variantPriceController.text) ??
+                              0.0,
+                        ),
+                        option.optionName,
+                      );
+                      variantNameController.clear();
+                      variantPriceController.clear();
+                    }
+                  },
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -204,23 +320,30 @@ class _AddProductScreenState extends State<AddProductScreen> {
     return Column(
       children: [
         const Text('Additional Images', style: TextStyle(fontSize: 16)),
-        Obx(() => Wrap(
-              spacing: 8,
-              children: _controller.additionalImages
-                  .map((image) => Stack(
+        Obx(
+          () => Wrap(
+            spacing: 8,
+            children:
+                _controller.additionalImages
+                    .map(
+                      (image) => Stack(
                         children: [
                           Image.memory(image, width: 80, height: 80),
                           Positioned(
                             right: 0,
                             child: IconButton(
                               icon: const Icon(Icons.close),
-                              onPressed: () {_controller.removeImage(image); } ,
+                              onPressed: () {
+                                _controller.removeImage(image);
+                              },
                             ),
                           ),
                         ],
-                      ))
-                  .toList(),
-            )),
+                      ),
+                    )
+                    .toList(),
+          ),
+        ),
         TextButton(
           onPressed: _pickAdditionalImages,
           child: const Text('Add Images'),

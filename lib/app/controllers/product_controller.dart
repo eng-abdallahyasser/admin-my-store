@@ -1,6 +1,7 @@
 // product_controller.dart
 import 'dart:developer';
 import 'dart:typed_data';
+import 'package:admin_my_store/app/models/variant.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -21,6 +22,7 @@ class ProductController extends GetxController {
   RxString selectedCategory = ''.obs;
   final RxList<Color> selectedColors = <Color>[].obs;
   final RxList<Option> options = <Option>[].obs;
+  final RxList<Variant> variants = <Variant>[].obs;
 
   // Form fields
   late TextEditingController titleController;
@@ -217,5 +219,26 @@ class ProductController extends GetxController {
   }
 
   void removeImage(Uint8List image) {}
+
+  void removeVariant(Variant variant,String optionName) {
+    variants.remove(variant);
+    for(Option option in options){
+      if(option.optionName==optionName){
+        option.variants.remove(variant);
+      }
+    }
+
+  }
+
+  void addVariants(Variant variant,String optionName) {
+    variants.add(variant);
+    for(Option option in options){
+      if(option.optionName==optionName){
+        option.variants.add(variant);
+      }
+    }
+  }
+
+  void saveVariants() {}
   
 }

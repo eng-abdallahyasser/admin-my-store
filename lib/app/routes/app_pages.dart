@@ -1,4 +1,5 @@
 import 'package:admin_my_store/app/bindings/auth_binding.dart';
+import 'package:admin_my_store/app/views/products/add_product_screen.dart';
 import 'package:get/get.dart';
 import 'package:admin_my_store/app/views/home/home_screen.dart';
 import '../bindings/product_binding.dart';
@@ -8,10 +9,7 @@ import 'app_routes.dart';
 
 class AppPages {
   static final routes = [
-    GetPage(
-      name: Routes.home,
-      page: () => const HomeScreen(),
-    ),
+    GetPage(name: Routes.home, page: () => const HomeScreen()),
     GetPage(
       name: Routes.login,
       page: () => LoginScreen(),
@@ -22,6 +20,11 @@ class AppPages {
       page: () => ProductListScreen(),
       binding: ProductBinding(),
     ),
+    GetPage(
+      name: Routes.addProduct,
+       page: () => AddProductScreen(),
+      binding: ProductBinding(),
+       ),
     // GetPage(
     //   name: Routes.orders,
     //   page: () => OrderListScreen(),
