@@ -1,5 +1,6 @@
 import 'package:admin_my_store/app/bindings/auth_binding.dart';
 import 'package:admin_my_store/app/views/products/add_product_screen.dart';
+import 'package:admin_my_store/app/views/products/edit_product_screen.dart';
 import 'package:get/get.dart';
 import 'package:admin_my_store/app/views/home/home_screen.dart';
 import '../bindings/product_binding.dart';
@@ -22,9 +23,14 @@ class AppPages {
     ),
     GetPage(
       name: Routes.addProduct,
-       page: () => AddProductScreen(),
+      page: () => AddProductScreen(),
       binding: ProductBinding(),
-       ),
+    ),
+    GetPage(
+      name: Routes.editProduct,
+      page: () => EditProductScreen(),
+      binding: ProductBinding(),
+    ),
     // GetPage(
     //   name: Routes.orders,
     //   page: () => OrderListScreen(),

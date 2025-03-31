@@ -1,4 +1,5 @@
 // product_controller.dart
+import 'dart:developer';
 import 'dart:typed_data';
 import 'package:admin_my_store/app/models/variant.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -9,7 +10,6 @@ import 'package:admin_my_store/app/models/category.dart';
 import 'package:admin_my_store/app/models/option.dart';
 import 'package:admin_my_store/app/models/product.dart';
 import 'package:admin_my_store/app/repo/product_repository.dart';
-
 
 class ProductController extends GetxController {
   final ProductRepository _productRepository = ProductRepository();
@@ -22,6 +22,9 @@ class ProductController extends GetxController {
   final RxList<Color> selectedColors = <Color>[].obs;
   final RxList<Option> options = <Option>[].obs;
   final RxList<Variant> variants = <Variant>[].obs;
+  Rx<String?> existingCoverImageUrl = Rx<String?>(null);
+  RxList<String> existingImageUrls = <String>[].obs;
+  RxList<Uint8List> newAdditionalImages = <Uint8List>[].obs;
 
   // Form fields
   late TextEditingController titleController;
@@ -72,7 +75,7 @@ class ProductController extends GetxController {
   Future<void> addProduct() async {
     try {
       isLoading(true);
-      
+
       // Upload images
       final coverUrl = await _uploadImage(coverImage.value!, 'cover');
       final List<String> additionalUrls = [coverUrl];
@@ -88,7 +91,7 @@ class ProductController extends GetxController {
         description: descriptionController.text,
         category: selectedCategory.value,
         price: double.parse(priceController.text),
-        oldPrice: double.tryParse(oldPriceController.text)??0.0,
+        oldPrice: double.tryParse(oldPriceController.text) ?? 0.0,
         imagesUrl: additionalUrls,
         colors: selectedColors,
         options: options,
@@ -105,7 +108,7 @@ class ProductController extends GetxController {
       final productId = await _productRepository.addProduct(newProduct);
       newProduct.id = productId;
       products.add(newProduct);
-      
+
       Get.back();
       Get.snackbar('Success', 'Product added successfully');
     } catch (e) {
@@ -119,8 +122,49 @@ class ProductController extends GetxController {
   Future<void> updateProduct(String productId) async {
     try {
       isLoading(true);
-      // Similar to addProduct but with update logic
-      // Handle image updates and Firestore update
+      // 1. Handle cover image
+      String? newCoverUrl;
+      if (coverImage.value != null) {
+        newCoverUrl = await _uploadImage(coverImage.value!, 'cover');
+      } else {
+        newCoverUrl = existingCoverImageUrl.value;
+      }
+
+      // 2. Handle additional images
+      List<String> newAdditionalUrls = [];
+      for (var image in newAdditionalImages) {
+        final url = await _uploadImage(image, 'gallery');
+        newAdditionalUrls.add(url);
+      }
+
+      // 3. Combine image URLs
+      final allImageUrls =
+          [newCoverUrl!] + [...existingImageUrls, ...newAdditionalUrls];
+
+      // 4. Create updated product
+      final updatedProduct = Product(
+        id: productId,
+        title: titleController.text,
+        description: descriptionController.text,
+        category: selectedCategory.value,
+        price: double.parse(priceController.text),
+        oldPrice: double.tryParse(oldPriceController.text) ?? 0.0,
+        imagesUrl: allImageUrls,
+        colors: selectedColors,
+        options: options,
+        isInitialezed: true,
+        optionsNames: options.map((o) => o.optionName).toList(),
+        coverImageUnit8List: coverImage.value,
+      );
+
+      // 5. Update in Firestore
+      await _productRepository.updateProduct(productId, updatedProduct);
+
+      // 6. Update local list
+      final index = products.indexWhere((p) => p.id == productId);
+      if (index != -1) {
+        products[index] = updatedProduct;
+      }
     } catch (e) {
       Get.snackbar('Error', 'Failed to update product: ${e.toString()}');
     } finally {
@@ -143,9 +187,9 @@ class ProductController extends GetxController {
 
   Future<String> _uploadImage(Uint8List image, String path) async {
     try {
-      final ref = FirebaseStorage.instance
-          .ref()
-          .child('products/$path/${DateTime.now().millisecondsSinceEpoch}');
+      final ref = FirebaseStorage.instance.ref().child(
+        'products/$path/${DateTime.now().millisecondsSinceEpoch}',
+      );
       await ref.putData(image);
       return await ref.getDownloadURL();
     } catch (e) {
@@ -154,7 +198,9 @@ class ProductController extends GetxController {
   }
 
   void pickCoverImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedFile = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+    );
     if (pickedFile != null) {
       final bytes = await pickedFile.readAsBytes();
       coverImage.value = bytes;
@@ -167,7 +213,7 @@ class ProductController extends GetxController {
       final bytes = await file.readAsBytes();
       additionalImages.add(bytes);
     }
-    }
+  }
 
   void addOption(Option option) {
     options.add(option);
@@ -197,10 +243,28 @@ class ProductController extends GetxController {
     selectedCategory.value = '';
   }
 
+  void removeExistingImage(String url) {
+    existingImageUrls.remove(url);
+  }
+
+  void removeNewImage(Uint8List image) {
+    newAdditionalImages.remove(image);
+  }
+
   Future<void> initializeProductForEditing(String productId) async {
+    log("initialize Product For Editing $productId");
     try {
       isLoading(true);
       final product = await _productRepository.getProductById(productId);
+      log("initialize Product For Editing : Product fetched ${product.title}");
+      // Initialize existing images
+      existingCoverImageUrl.value =
+          product.imagesUrl.isNotEmpty ? product.imagesUrl[0] : null;
+      existingImageUrls.value =
+          product.imagesUrl.length > 1
+              ? product.imagesUrl.sublist(1)
+              : <String>[];
+      log("initialize Product For Editing : Product fetched ${product.title}");
       // Populate form fields with product data
       titleController.text = product.title;
       descriptionController.text = product.description;
@@ -209,7 +273,13 @@ class ProductController extends GetxController {
       selectedCategory.value = product.category;
       selectedColors.value = product.colors;
       options.value = product.options;
-      // Handle image loading if needed
+
+      log(
+        "initialize Product For Editing : parameters updated ${product.toString()}",
+      );
+      // Clear new images
+      newAdditionalImages.clear();
+      coverImage.value = null;
     } catch (e) {
       Get.snackbar('Error', 'Failed to load product: ${e.toString()}');
     } finally {
@@ -219,25 +289,23 @@ class ProductController extends GetxController {
 
   void removeImage(Uint8List image) {}
 
-  void removeVariant(Variant variant,String optionName) {
+  void removeVariant(Variant variant, String optionName) {
     variants.remove(variant);
-    for(Option option in options){
-      if(option.optionName==optionName){
+    for (Option option in options) {
+      if (option.optionName == optionName) {
         option.variants.remove(variant);
       }
     }
-
   }
 
-  void addVariants(Variant variant,String optionName) {
+  void addVariants(Variant variant, String optionName) {
     variants.add(variant);
-    for(Option option in options){
-      if(option.optionName==optionName){
+    for (Option option in options) {
+      if (option.optionName == optionName) {
         option.variants.add(variant);
       }
     }
   }
 
   void saveVariants() {}
-  
 }

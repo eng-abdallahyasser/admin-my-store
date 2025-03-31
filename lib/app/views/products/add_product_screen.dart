@@ -5,16 +5,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:admin_my_store/app/controllers/product_controller.dart';
 import 'package:admin_my_store/app/models/option.dart';
 
-class AddProductScreen extends StatefulWidget {
-  const AddProductScreen({super.key});
+class AddProductScreen extends StatelessWidget {
+  AddProductScreen({super.key});
 
-  @override
-  _AddProductScreenState createState() => _AddProductScreenState();
-}
-
-class _AddProductScreenState extends State<AddProductScreen> {
   final ProductController _controller = Get.find();
-  final _formKey = GlobalKey<FormState>();
+
   final _picker = ImagePicker();
 
   @override
@@ -24,7 +19,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
-          key: _formKey,
           child: Column(
             children: [
               _buildCoverImageField(),
@@ -212,10 +206,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   ),
                 ),
                 IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed:
-                            () => _controller.options.remove(option),
-                      ),
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () => _controller.options.remove(option),
+                ),
               ],
             ),
             Row(
@@ -262,8 +255,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       ),
                     ),
                   ),
-                  if (_controller.variants.isNotEmpty)
-                    const Divider(),
+                  if (_controller.variants.isNotEmpty) const Divider(),
                 ],
               ),
             ),
@@ -359,13 +351,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
       final bytes = await file.readAsBytes();
       _controller.additionalImages.add(bytes);
     }
-    }
+  }
 
   void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      _controller.addProduct();
-      Get.back();
-    }
+    _controller.addProduct();
+    Get.back();
   }
 }

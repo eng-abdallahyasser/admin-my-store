@@ -7,7 +7,8 @@ class ProductCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
-  const ProductCard({super.key, 
+  const ProductCard({
+    super.key,
     required this.product,
     required this.onEdit,
     required this.onDelete,
@@ -27,16 +28,21 @@ class ProductCard extends StatelessWidget {
                 top: 8,
                 left: 8,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.red,
-                    borderRadius: BorderRadius.circular(4)),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                   child: Text(
                     '${((1 - (product.price / product.oldPrice)) * 100)}% OFF',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
-                      fontWeight: FontWeight.bold),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -51,7 +57,8 @@ class ProductCard extends StatelessWidget {
                   product.title,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 16),
+                    fontSize: 16,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -71,7 +78,8 @@ class ProductCard extends StatelessWidget {
                         '\$${product.oldPrice.toStringAsFixed(2)}',
                         style: const TextStyle(
                           color: Colors.grey,
-                          decoration: TextDecoration.lineThrough),
+                          decoration: TextDecoration.lineThrough,
+                        ),
                       ),
                     ),
                   ],
@@ -85,7 +93,11 @@ class ProductCard extends StatelessWidget {
                       onPressed: onEdit,
                     ),
                     IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                      icon: const Icon(
+                        Icons.delete,
+                        color: Colors.red,
+                        size: 20,
+                      ),
                       onPressed: onDelete,
                     ),
                   ],
@@ -103,18 +115,31 @@ class ProductCard extends StatelessWidget {
       height: 120,
       width: double.infinity,
       decoration: const BoxDecoration(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(4))),
-      child: product.coverImageUnit8List != null
-          ? Image.memory(product.coverImageUnit8List!, fit: BoxFit.cover)
-          : FutureBuilder(future: product.fetchCoverImage(), builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done) {
-              return Image.memory(product.coverImageUnit8List!, fit: BoxFit.cover);
-            }else if (snapshot.hasError) {
-              return Center(child: Text("Error: ${snapshot.error}"));
-            }
-            else {
-              return const Center(child: CircularProgressIndicator());
-            }
-      }));
+        borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
+      ),
+      child:
+          product.coverImageUnit8List != null
+              ? Image.memory(product.coverImageUnit8List!, fit: BoxFit.cover)
+              : FutureBuilder(
+                future: product.fetchCoverImage(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(child: Text("Error: ${snapshot.error}"));
+                  }
+                  final product = snapshot.data;
+                  if (product == null) {
+                    return const Text('Product not found');
+                  }
+                  return Image.memory(
+                    product.coverImageUnit8List!,
+                    fit: BoxFit.cover,
+                  );
+                },
+              ),
+    );
   }
 }
