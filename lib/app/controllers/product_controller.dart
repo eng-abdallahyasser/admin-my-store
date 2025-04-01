@@ -18,13 +18,13 @@ class ProductController extends GetxController {
   final Rx<Uint8List?> coverImage = Rx<Uint8List?>(null);
   final RxList<Uint8List> additionalImages = <Uint8List>[].obs;
   final RxBool isLoading = false.obs;
-  RxString selectedCategory = ''.obs;
+  final RxString selectedCategory = ''.obs;
   final RxList<Color> selectedColors = <Color>[].obs;
   final RxList<Option> options = <Option>[].obs;
   final RxList<Variant> variants = <Variant>[].obs;
-  Rx<String?> existingCoverImageUrl = Rx<String?>(null);
-  RxList<String> existingImageUrls = <String>[].obs;
-  RxList<Uint8List> newAdditionalImages = <Uint8List>[].obs;
+  final Rx<String?> existingCoverImageUrl = Rx<String?>(null);
+  final RxList<String> existingImageUrls = <String>[].obs;
+  final RxList<Uint8List> newAdditionalImages = <Uint8List>[].obs;
 
   // Form fields
   late TextEditingController titleController;
@@ -254,7 +254,7 @@ class ProductController extends GetxController {
   Future<void> initializeProductForEditing(String productId) async {
     log("initialize Product For Editing $productId");
     try {
-      isLoading(true);
+      // isLoading(true);
       final product = await _productRepository.getProductById(productId);
       log("initialize Product For Editing : Product fetched ${product.title}");
       // Initialize existing images
@@ -275,7 +275,7 @@ class ProductController extends GetxController {
       options.value = product.options;
 
       log(
-        "initialize Product For Editing : parameters updated ${product.toString()}",
+        "initialize Product For Editing : parameters updated ${product.title}",
       );
       // Clear new images
       newAdditionalImages.clear();

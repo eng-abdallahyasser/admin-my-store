@@ -9,6 +9,8 @@ import 'package:admin_my_store/app/widgets/product_card.dart';
 class ProductListScreen extends StatelessWidget {
   final ProductController productController = Get.find();
 
+  ProductListScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -42,10 +44,8 @@ class ProductListScreen extends StatelessWidget {
             final product = productController.products[index];
             return ProductCard(
               product: product,
-              onEdit: () => Get.toNamed(
-                Routes.editProduct,
-                arguments: product.id,
-              ),
+              onEdit:
+                  () => Get.toNamed(Routes.editProduct, arguments: product.id),
               onDelete: () => _confirmDelete(product),
             );
           },
@@ -60,10 +60,7 @@ class ProductListScreen extends StatelessWidget {
         title: const Text('Delete Product'),
         content: Text('Are you sure you want to delete ${product.title}?'),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           TextButton(
             onPressed: () {
               productController.deleteProduct(product.id);

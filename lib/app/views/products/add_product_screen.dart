@@ -1,4 +1,5 @@
 import 'package:admin_my_store/app/models/variant.dart';
+import 'package:admin_my_store/app/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,7 +10,9 @@ class AddProductScreen extends StatelessWidget {
   AddProductScreen({super.key});
 
   final ProductController _controller = Get.find();
+  final _formKey = GlobalKey<FormState>();
 
+  
   final _picker = ImagePicker();
 
   @override
@@ -19,6 +22,7 @@ class AddProductScreen extends StatelessWidget {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
+          key: _formKey,
           child: Column(
             children: [
               _buildCoverImageField(),
@@ -36,16 +40,18 @@ class AddProductScreen extends StatelessWidget {
               _buildOptionsSection(),
               _buildImageUpload(),
               const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _submitForm,
-                child: const Text('Add Product'),
-              ),
+              Obx(() => CustomButton(
+                text: 'Add Product',
+                onPressed: (){_controller.isLoading.value ? null : _submitForm();},
+                isLoading: _controller.isLoading.value,
+              )),
             ],
           ),
         ),
       ),
     );
   }
+  
 
   Widget _buildCoverImageField() {
     return GestureDetector(
@@ -355,6 +361,5 @@ class AddProductScreen extends StatelessWidget {
 
   void _submitForm() {
     _controller.addProduct();
-    Get.back();
   }
 }

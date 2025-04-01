@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 
 import '../../routes/app_routes.dart';
 
@@ -19,7 +18,9 @@ class HomeScreen extends StatelessWidget {
             Get.toNamed(Routes.products);
           }),
           _buildTile("Orders", Icons.receipt, () {}),
-          _buildTile("Categories", Icons.category, () {}),
+          _buildTile("Categories", Icons.category, () {
+            Get.toNamed(Routes.categories);
+          }),
           _buildTile("Customers", Icons.people, () {}),
         ],
       ),
