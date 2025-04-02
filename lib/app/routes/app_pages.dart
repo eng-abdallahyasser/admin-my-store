@@ -1,7 +1,10 @@
 import 'package:admin_my_store/app/bindings/auth_binding.dart';
 import 'package:admin_my_store/app/bindings/category_binding.dart';
+import 'package:admin_my_store/app/bindings/order_binding.dart';
 import 'package:admin_my_store/app/views/categories/add_category_screen.dart';
 import 'package:admin_my_store/app/views/categories/category_list_screen.dart';
+import 'package:admin_my_store/app/views/orders/order_details_screen.dart';
+import 'package:admin_my_store/app/views/orders/order_list_screen.dart';
 import 'package:admin_my_store/app/views/products/add_product_screen.dart';
 import 'package:admin_my_store/app/views/products/edit_product_screen.dart';
 import 'package:get/get.dart';
@@ -34,11 +37,16 @@ class AppPages {
       page: () => EditProductScreen(),
       binding: ProductBinding(),
     ),
-    // GetPage(
-    //   name: Routes.orders,
-    //   page: () => OrderListScreen(),
-    //   // binding: OrderBinding(),
-    // ),
+    GetPage(
+      name: Routes.orders,
+      page: () => OrderListScreen(),
+      binding: OrderBinding(),
+    ),
+    GetPage(
+      name: Routes.orderDetails,
+      page: () => OrderDetailsScreen(),
+      binding: OrderBinding(),
+    ),
     GetPage(
       name: Routes.categories,
       page: () => CategoryListScreen(),

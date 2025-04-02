@@ -1,95 +1,192 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:admin_my_store/app/models/cart_item.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
-class OrderForDelivary {
-  List<CartItem> cartItem;
-  int number;
-  String orderID;
-  String userID;
-  String addressID;
-  
-  String dateTime;
-  OrderForDelivary({
-    required this.cartItem,
-    this.number=0,
-    required this.orderID,
-    required this.userID,
-    required this.addressID,
-    this.dateTime="",
+class MyOrder {
+  final String id;
+  int? orderNumber;
+  final String userId;
+  final List<CartItem> items;
+  final double total;
+  final String status;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
+  final String paymentStatus;
+  final String customerName;
+  final String customerId;
+  final String customerPhone;
+  final String shippingAddress;
+
+
+  MyOrder({
+    required this.id,
+    this.orderNumber,
+    required this.userId,
+    required this.items,
+    required this.total,
+    required this.status,
+    required this.createdAt,
+    this.updatedAt,
+    required this.paymentStatus,
+    required this.customerName,
+    required this.customerId,
+    required this.customerPhone,
+    required this.shippingAddress,
   });
 
- 
-
-  OrderForDelivary copyWith({
-    List<CartItem>? cartItem,
-    int? number,
-    String? orderID,
-    String? userID,
-    String? addressID,
-    String? dateTime,
+  MyOrder copyWith({
+    String? id,
+    String? userId,
+    int? orderNumber,
+    List<CartItem>? items,
+    double? total,
+    String? status,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? paymentStatus,
+    String? customerName,
+    String? customerId,
+    String? customerEmail,
+    String? customerPhone,
+    String? shippingAddress,
   }) {
-    return OrderForDelivary(
-      cartItem: cartItem ?? this.cartItem,
-      number: number ?? this.number,
-      orderID: orderID ?? this.orderID,
-      userID: userID ?? this.userID,
-      addressID: addressID ?? this.addressID,
-      dateTime: dateTime ?? this.dateTime,
+    return MyOrder(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      orderNumber: orderNumber ?? this.orderNumber,
+      items: items ?? this.items,
+      total: total ?? this.total,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      customerName: customerName ?? this.customerName,
+      customerId: customerEmail ?? this.customerId,
+      customerPhone: customerPhone ?? this.customerPhone,
+      shippingAddress: shippingAddress ?? this.shippingAddress,
     );
   }
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
-      'cartItem': cartItem.map((x) => x.toJson()).toList(),
-      'number': number,
-      'orderID': orderID,
-      'userID': userID,
-      'addressID': addressID,
-      'dateTime': dateTime,
+      'id': id,
+      'userId': userId,
+      'items': items.map((x) => x.toJson()).toList(),
+      'total': total,
+      'status': status,
+      'createdAt': createdAt.millisecondsSinceEpoch,
+      'updatedAt': updatedAt?.millisecondsSinceEpoch,
+      'paymentStatus': paymentStatus,
+      'customerName': customerName,
+      'customerEmail': customerId,
+      'customerPhone': customerPhone,
+      'shippingAddress': shippingAddress,
     };
   }
+    factory MyOrder.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return MyOrder(
+      id: doc.id,
+      orderNumber: data['orderNumber'] as int? ?? -1,
+      userId: data['userId'] as String? ?? 'unknown_user',
+      items: (data['items'] as List<dynamic>? ?? [])
+          .map((i) => CartItem.fromJson(i as Map<String, dynamic>))
+          .toList(),
+      total: (data['total'] as num? ?? 0.0).toDouble(),
+      status: data['status'] as String? ?? 'pending',
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+      paymentStatus: data['paymentStatus'] as String? ?? 'unpaid',
+      customerName: data['customerName'] as String? ?? 'Unknown Customer',
+      customerId: data['customerEmail'] as String? ?? 'No Email',
+      customerPhone: data['customerPhone'] as String? ?? 'No Phone',
+      shippingAddress: data['shippingAddress'] as String? ?? 'No Address',
+    );
+  }
 
-  factory OrderForDelivary.fromMap(Map<String, dynamic> map) {
-    return OrderForDelivary(
-      cartItem: List<CartItem>.from((map['cartItem'] as List<int>).map<CartItem>((x) => CartItem.fromJson(x as Map<String,dynamic>),),),
-      number: map['number'] as int,
-      orderID: map['orderID'] as String,
-      userID: map['userID'] as String,
-      addressID: map['addressID'] as String,
-      dateTime: map['dateTime'] as String,
+  factory MyOrder.fromMap(Map<String, dynamic> map) {
+    return MyOrder(
+      id: map['id'] as String,
+      userId: map['userId'] as String,
+      orderNumber: map['orderNumber'] as int,
+      items: List<CartItem>.from((map['items'] as List<int>).map<CartItem>((x) => CartItem.fromJson(x as Map<String,dynamic>),),),
+      total: map['total'] as double,
+      status: map['status'] as String,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int),
+      updatedAt: map['updatedAt'] != null ? DateTime.fromMillisecondsSinceEpoch(map['updatedAt'] as int) : null,
+      paymentStatus: map['paymentStatus'] as String,
+      customerName: map['customerName'] as String,
+      customerId: map['customerEmail'] as String,
+      customerPhone: map['customerPhone'] as String,
+      shippingAddress: map['shippingAddress'] as String,
     );
   }
 
   String toJson() => json.encode(toMap());
 
-  factory OrderForDelivary.fromJson(String source) => OrderForDelivary.fromMap(json.decode(source) as Map<String, dynamic>);
+  factory MyOrder.fromJson(String source) => MyOrder.fromMap(json.decode(source) as Map<String, dynamic>);
 
   @override
   String toString() {
-    return 'OrderForDelivary(cartItem: $cartItem, number: $number, orderID: $orderID, userID: $userID, addressID: $addressID, dateTime: $dateTime)';
+    return 'Order(id: $id, userId: $userId,orderNumber: $orderNumber, items: $items, total: $total, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, paymentStatus: $paymentStatus, customerName: $customerName, customerEmail: $customerId, customerPhone: $customerPhone, shippingAddress: $shippingAddress)';
   }
 
   @override
-  bool operator ==(covariant OrderForDelivary other) {
+  bool operator ==(covariant MyOrder other) {
     if (identical(this, other)) return true;
   
     return 
-      listEquals(other.cartItem, cartItem) &&
-      other.number == number &&
-      other.orderID == orderID &&
-      other.userID == userID &&
-      other.addressID == addressID &&
-      other.dateTime == dateTime;
+      other.id == id &&
+      other.userId == userId &&
+      other.orderNumber == orderNumber &&
+      listEquals(other.items, items) &&
+      other.total == total &&
+      other.status == status &&
+      other.createdAt == createdAt &&
+      other.updatedAt == updatedAt &&
+      other.paymentStatus == paymentStatus &&
+      other.customerName == customerName &&
+      other.customerId == customerId &&
+      other.customerPhone == customerPhone &&
+      other.shippingAddress == shippingAddress;
   }
 
   @override
   int get hashCode {
-    return cartItem.hashCode ^
-      number.hashCode ^
-      orderID.hashCode ^
-      userID.hashCode ^
-      addressID.hashCode ^
-      dateTime.hashCode;
+    return id.hashCode ^
+      userId.hashCode ^
+      items.hashCode ^
+      total.hashCode ^
+      status.hashCode ^
+      createdAt.hashCode ^
+      updatedAt.hashCode ^
+      paymentStatus.hashCode ^
+      customerName.hashCode ^
+      customerId.hashCode ^
+      customerPhone.hashCode ^
+      shippingAddress.hashCode;
+  }
+
+  static String _parseString(dynamic value) {
+    if (value == null) return 'Unknown';
+    if (value is String) return value;
+    return value.toString();
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  static double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
   }
 }

@@ -17,7 +17,9 @@ class HomeScreen extends StatelessWidget {
           _buildTile("Products", Icons.shopping_bag, () {
             Get.toNamed(Routes.products);
           }),
-          _buildTile("Orders", Icons.receipt, () {}),
+          _buildTile("Orders", Icons.receipt, () {
+            Get.toNamed(Routes.orders);
+          }),
           _buildTile("Categories", Icons.category, () {
             Get.toNamed(Routes.categories);
           }),

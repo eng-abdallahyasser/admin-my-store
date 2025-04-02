@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:admin_my_store/app/models/order.dart';
 
 class OrderCard extends StatelessWidget {
-  final OrderForDelivary order;
+  final MyOrder order;
 
-  const OrderCard({required this.order});
+  const OrderCard({super.key, required this.order});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +20,7 @@ class OrderCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Order #${order.orderID.substring(0, 6)}',
+                  'Order #${order.id.substring(0, 6)}',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16),
@@ -38,12 +38,12 @@ class OrderCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Items: ${order.cartItem.length}'),
+                Text('Items: ${order.items.length}'),
                 Text('Total: \$${_calculateTotal()}'),
               ],
             ),
             const SizedBox(height: 8),
-            Text('Customer ID: ${order.userID.substring(0, 8)}...'),
+            Text('Customer ID: ${order.customerId.substring(0, 8)}...'),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -74,6 +74,6 @@ class OrderCard extends StatelessWidget {
   }
 
   double _calculateTotal() {
-    return order.cartItem.fold(0, (sum, item) => sum + (item.product?.price ?? 0) * item.numOfItem);
+    return order.items.fold(0, (sum, item) => sum + item.totalPrice);
   }
 }
