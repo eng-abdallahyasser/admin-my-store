@@ -7,20 +7,30 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:admin_my_store/app/controllers/product_controller.dart';
 
-class EditProductScreen extends StatelessWidget {
+class EditProductScreen extends StatefulWidget {
   final productId = Get.arguments as String;
-  final ProductController _controller = Get.find();
+  final _picker = ImagePicker();
 
   EditProductScreen({super.key});
 
+  @override
+  _EditProductScreenState createState() => _EditProductScreenState();
+}
+
+class _EditProductScreenState extends State<EditProductScreen> {
+  final ProductController _controller = Get.find();
   final _formKey = GlobalKey<FormState>();
 
-  final _picker = ImagePicker();
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _controller.initializeProductForEditing(widget.productId);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final productId = Get.arguments as String;
-    _controller.initializeProductForEditing(productId);
     return Scaffold(
       appBar: AppBar(title: const Text('Edit Product')),
       body: Obx(() {
@@ -37,12 +47,12 @@ class EditProductScreen extends StatelessWidget {
                 _buildCoverImageField(),
                 _buildTextField(
                   'Title',
-                  _controller.titleController.text,
+                  _controller.titleController,
                   (value) => _controller.titleController.text = value,
                 ),
                 _buildTextField(
                   'Description',
-                  _controller.descriptionController.text,
+                  _controller.descriptionController,
                   (value) => _controller.descriptionController.text = value,
                 ),
                 _buildPriceFields(),
@@ -51,11 +61,15 @@ class EditProductScreen extends StatelessWidget {
                 _buildOptionsSection(),
                 _buildImageUpload(),
                 const SizedBox(height: 20),
-                Obx(() => CustomButton(
-                  text: 'Save Changes',
-                  onPressed: (){_controller.isLoading.value ? null :_updateProduct();},
-                  isLoading: _controller.isLoading.value,
-                )),
+                Obx(
+                  () => CustomButton(
+                    text: 'Save Changes',
+                    onPressed: () {
+                      _controller.isLoading.value ? null : _updateProduct();
+                    },
+                    isLoading: _controller.isLoading.value,
+                  ),
+                ),
               ],
             ),
           ),
@@ -63,8 +77,9 @@ class EditProductScreen extends StatelessWidget {
       }),
     );
   }
+
   void _updateProduct() {
-    _controller.updateProduct(productId);
+    _controller.updateProduct(widget.productId);
     Get.back();
   }
 
@@ -86,17 +101,21 @@ class EditProductScreen extends StatelessWidget {
   }
 
   Future<void> _pickCoverImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    final pickedFile = await widget._picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       final bytes = await pickedFile.readAsBytes();
       _controller.coverImage.value = bytes;
     }
   }
 
-  Widget _buildTextField(String label,String initialValue, Function(String) onSaved) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller,
+    Function(String) onSaved,
+  ) {
     return TextFormField(
       decoration: InputDecoration(labelText: label),
-      initialValue: initialValue,
+      controller: controller,
       validator: (value) => value!.isEmpty ? 'Required field' : null,
       onSaved: (value) => onSaved(value!),
     );
@@ -138,7 +157,12 @@ class EditProductScreen extends StatelessWidget {
                 )
                 .toList(),
         onChanged: (value) => _controller.selectedCategory.value = value!,
-        decoration:  InputDecoration(labelText: (_controller.selectedCategory.value=="")? 'Category' : _controller.selectedCategory.value),
+        decoration: InputDecoration(
+          labelText:
+              (_controller.selectedCategory.value == "")
+                  ? 'Category'
+                  : _controller.selectedCategory.value,
+        ),
         validator: (value) => value == null ? 'Please select a category' : null,
       ),
     );
@@ -368,7 +392,7 @@ class EditProductScreen extends StatelessWidget {
   }
 
   Future<void> _pickAdditionalImages() async {
-    final pickedFiles = await _picker.pickMultiImage();
+    final pickedFiles = await widget._picker.pickMultiImage();
     for (var file in pickedFiles) {
       final bytes = await file.readAsBytes();
       _controller.additionalImages.add(bytes);

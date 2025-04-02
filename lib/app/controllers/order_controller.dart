@@ -40,13 +40,23 @@ class OrderController extends GetxController {
     }
   }
 
-  Future<void> loadOrderDetails(String orderId) async {
+  // @override
+  // void onReady() {
+  //   final orderId = Get.arguments as String;
+  //   loadOrderDetails(orderId);
+  //   super.onReady();
+  // }
+
+  Future<MyOrder?> loadOrderDetails(String orderId) async {
     try {
       isLoading(true);
-      selectedOrder.value = await _repository.getOrderById(orderId);
+      final response = await _repository.getOrderById(orderId);
+      selectedOrder.value = response;
+      return response;
     } catch (e) {
       log(e.toString());
       Get.snackbar('Error', 'Failed to load order details');
+      return null;
     } finally {
       isLoading(false);
     }

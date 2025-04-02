@@ -9,7 +9,7 @@ class CustomerCard extends StatelessWidget {
   final int orderCount;
   final Address primaryAddress;
 
-  const CustomerCard({
+  const CustomerCard({super.key, 
     required this.customerId,
     required this.name,
     required this.email,

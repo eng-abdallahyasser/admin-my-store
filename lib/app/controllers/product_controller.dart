@@ -306,6 +306,4 @@ class ProductController extends GetxController {
       }
     }
   }
-
-  void saveVariants() {}
 }

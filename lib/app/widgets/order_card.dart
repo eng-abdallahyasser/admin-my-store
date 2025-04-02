@@ -1,6 +1,8 @@
 // order_card.dart
+import 'package:admin_my_store/app/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:admin_my_store/app/models/order.dart';
+import 'package:get/get.dart';
 
 class OrderCard extends StatelessWidget {
   final MyOrder order;
@@ -50,7 +52,9 @@ class OrderCard extends StatelessWidget {
               children: [
                 TextButton(
                   child: const Text('VIEW DETAILS'),
-                  onPressed: () {},
+                  onPressed: () {
+                    Get.toNamed(Routes.orderDetails, arguments: order.id);
+                  },
                 ),
                 const SizedBox(width: 8),
                 TextButton(
