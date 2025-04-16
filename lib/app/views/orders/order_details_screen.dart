@@ -33,8 +33,8 @@ class OrderDetailsScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildOrderInfo(order),
-              // const SizedBox(height: 24),
-              // _buildStatusSelector(order),
+              const SizedBox(height: 24),
+              _buildStatusSelector(order),
               const SizedBox(height: 24),
               _buildOrderItems(order),
               const SizedBox(height: 24),
@@ -151,7 +151,7 @@ class OrderDetailsScreen extends StatelessWidget {
         Expanded(
           child: CustomButton(
             text: 'Send Notification',
-            onPressed: () => _controller.sendOrderUpdateNotification(order.id),
+            onPressed: () => {_controller.sendNotification()},
           ),
         ),
       ],

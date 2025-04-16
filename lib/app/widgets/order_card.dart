@@ -29,9 +29,9 @@ class OrderCard extends StatelessWidget {
                 ),
                 Chip(
                   backgroundColor: _getStatusColor(),
-                  label: const Text(
-                    'Status',
-                    style: TextStyle(color: Colors.white),
+                  label: Text(
+                    order.status,
+                    style: const TextStyle(color: Colors.white),
                   ),
                 ),
               ],

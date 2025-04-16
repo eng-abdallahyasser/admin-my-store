@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:admin_my_store/app/models/order.dart';
 import 'package:admin_my_store/app/repo/order_repository.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 
 
@@ -11,6 +13,9 @@ class OrderController extends GetxController {
   final Rx<MyOrder?> selectedOrder = Rx<MyOrder?>(null);
   final RxList<String> selectedStatus = <String>[].obs;
   final RxBool isLoading = false.obs;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  late StreamSubscription<QuerySnapshot> _ordersSubscription;
+
   
   final List<String> statusList = [
     'Pending',
@@ -23,7 +28,25 @@ class OrderController extends GetxController {
   @override
   void onInit() {
     loadOrders();
+    _startListening();
     super.onInit();
+  }
+  void _startListening() {
+    _ordersSubscription = _firestore
+        .collection('orders')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+          orders.assignAll(
+            snapshot.docs.map((doc) => MyOrder.fromFirestore(doc)).toList()
+          );
+        });
+  }
+  Future<void> updateOrderStatus(String orderId, String newStatus) async {
+    await _firestore.collection('orders').doc(orderId).update({
+      'status': newStatus,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   Future<void> loadOrders() async {
@@ -62,22 +85,22 @@ class OrderController extends GetxController {
     }
   }
 
-  Future<void> updateOrderStatus(String orderId, String newStatus) async {
-    try {
-      isLoading(true);
-      await _repository.updateOrderStatus(orderId, newStatus);
-      final index = orders.indexWhere((o) => o.id == orderId);
-      if (index != -1) {
-        orders[index] = orders[index].copyWith(status: newStatus);
-      }
-      Get.snackbar('Success', 'Order status updated');
-    } catch (e) {
-      log(e.toString());
-      Get.snackbar('Error', 'Failed to update status');
-    } finally {
-      isLoading(false);
-    }
-  }
+  // Future<void> updateOrderStatus(String orderId, String newStatus) async {
+  //   try {
+  //     isLoading(true);
+  //     await _repository.updateOrderStatus(orderId, newStatus);
+  //     final index = orders.indexWhere((o) => o.id == orderId);
+  //     if (index != -1) {
+  //       orders[index] = orders[index].copyWith(status: newStatus);
+  //     }
+  //     Get.snackbar('Success', 'Order status updated');
+  //   } catch (e) {
+  //     log(e.toString());
+  //     Get.snackbar('Error', 'Failed to update status');
+  //   } finally {
+  //     isLoading(false);
+  //   }
+  // }
 
   void toggleStatusFilter(String status) {
     if (selectedStatus.contains(status)) {

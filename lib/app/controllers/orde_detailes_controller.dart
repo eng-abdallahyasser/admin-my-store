@@ -1,6 +1,6 @@
 import 'package:admin_my_store/app/models/order.dart';
 import 'package:admin_my_store/app/repo/order_repository.dart';
-import 'package:flutter/src/widgets/framework.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 
 
@@ -48,7 +48,23 @@ class OrderDetailsController extends GetxController {
     }
   }
 
-  void sendOrderUpdateNotification(String id) {
+  Future<void> sendNotification() async {
+    try {
+      final order = this.order.value!;
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(order.userId)
+          .get();
 
+      if (userDoc.exists && userDoc.data()?['fcmToken'] != null) {
+        // Send notification using FCM token
+        Get.snackbar('Success', 'Notification sent!');
+      } else {
+        // User does not exist or FCM token is not available
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to send notification');
+      // print('Error sending notification: $e');
+    }
   }
 }
