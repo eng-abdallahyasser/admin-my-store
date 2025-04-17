@@ -1,4 +1,4 @@
-import 'package:admin_my_store/app/models/order.dart';
+import 'package:admin_my_store/app/models/my_order.dart';
 import 'package:admin_my_store/app/repo/order_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';

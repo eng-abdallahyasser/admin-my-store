@@ -1,5 +1,5 @@
 import 'package:admin_my_store/app/controllers/orde_detailes_controller.dart';
-import 'package:admin_my_store/app/models/order.dart';
+import 'package:admin_my_store/app/models/my_order.dart';
 import 'package:admin_my_store/app/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -121,7 +121,7 @@ class OrderDetailsScreen extends StatelessWidget {
           children: [
             const Text('Customer Info:', style: TextStyle(fontSize: 16)),
             _buildInfoRow('Name:', order.customerName),
-            _buildInfoRow('Email:', order.customerId),
+            _buildInfoRow('Email:', order.customerEmail),
             _buildInfoRow('Phone:', order.customerPhone),
             const SizedBox(height: 8),
             const Text('Shipping Address:', style: TextStyle(fontSize: 16)),

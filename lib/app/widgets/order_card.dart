@@ -1,7 +1,7 @@
 // order_card.dart
 import 'package:admin_my_store/app/routes/app_routes.dart';
 import 'package:flutter/material.dart';
-import 'package:admin_my_store/app/models/order.dart';
+import 'package:admin_my_store/app/models/my_order.dart';
 import 'package:get/get.dart';
 
 class OrderCard extends StatelessWidget {
@@ -25,7 +25,8 @@ class OrderCard extends StatelessWidget {
                   'Order #${order.id.substring(0, 6)}',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 16),
+                    fontSize: 16,
+                  ),
                 ),
                 Chip(
                   backgroundColor: _getStatusColor(),
@@ -45,7 +46,7 @@ class OrderCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text('Customer ID: ${order.customerId.substring(0, 8)}...'),
+            Text('Customer ID: ${order.customerEmail.substring(0, 8)}...'),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -61,7 +62,8 @@ class OrderCard extends StatelessWidget {
                   onPressed: () {},
                   style: TextButton.styleFrom(
                     backgroundColor: Colors.green,
-                    foregroundColor: Colors.white),
+                    foregroundColor: Colors.white,
+                  ),
                   child: const Text('MARK COMPLETED'),
                 ),
               ],

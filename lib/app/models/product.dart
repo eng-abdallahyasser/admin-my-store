@@ -53,7 +53,7 @@ class Product {
         "oldPrice": oldPrice,
         "description": description,
         "quantity": quantity,
-        "options": options.map((x) => x.toJson()).toList(),
+        "options": options.map((x) => x.toMap()).toList(),
         "optionsNames": optionsNames
       };
 
@@ -113,40 +113,7 @@ class Product {
       oldPrice: (json['oldPrice'] as num?)?.toDouble() ?? 0.0,
       description: json['description'] ?? "",
       quantity: json['quantity'] ?? 1,
-      options: json['option'] ??
-          [
-            Option(
-                min: 1,
-                max: 1,
-                variants: [
-                  Variant(id: "id", name: "name", price: 2),
-                  Variant(id: "id", name: "name", price: 2)
-                ],
-                choosedVariant: [],
-                optionName: 'option 1'),
-            Option(
-                min: 1,
-                max: 2,
-                variants: [
-                  Variant(id: "id", name: "name", price: 2),
-                  Variant(id: "id", name: "name", price: 2),
-                  Variant(id: "id", name: "name", price: 2)
-                ],
-                choosedVariant: [Variant(id: "id", name: "name", price: 2)],
-                optionName: 'option name 2'),
-            Option(
-                min: 1,
-                max: 1,
-                variants: [Variant(id: "id", name: "name", price: 2)],
-                choosedVariant: [],
-                optionName: 'option 3'),
-            Option(
-                min: 1,
-                max: 1,
-                variants: [Variant(id: "id", name: "name", price: 2)],
-                choosedVariant: [],
-                optionName: 'option name 4')
-          ],
+      options: json['options']?? [],
       optionsNames: List<String>.from(json['optionsNames'] ?? []),
     );
   }

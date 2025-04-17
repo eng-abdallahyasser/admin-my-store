@@ -14,10 +14,9 @@ class MyOrder {
   DateTime? updatedAt;
   final String paymentStatus;
   final String customerName;
-  final String customerId;
+  final String customerEmail;
   final String customerPhone;
   final String shippingAddress;
-
 
   MyOrder({
     required this.id,
@@ -30,7 +29,7 @@ class MyOrder {
     this.updatedAt,
     required this.paymentStatus,
     required this.customerName,
-    required this.customerId,
+    required this.customerEmail,
     required this.customerPhone,
     required this.shippingAddress,
   });
@@ -62,7 +61,7 @@ class MyOrder {
       updatedAt: updatedAt ?? this.updatedAt,
       paymentStatus: paymentStatus ?? this.paymentStatus,
       customerName: customerName ?? this.customerName,
-      customerId: customerEmail ?? this.customerId,
+      customerEmail: customerEmail ?? this.customerEmail,
       customerPhone: customerPhone ?? this.customerPhone,
       shippingAddress: shippingAddress ?? this.shippingAddress,
     );
@@ -75,31 +74,33 @@ class MyOrder {
       'items': items.map((x) => x.toJson()).toList(),
       'total': total,
       'status': status,
-      'createdAt': createdAt.millisecondsSinceEpoch,
-      'updatedAt': updatedAt?.millisecondsSinceEpoch,
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
       'paymentStatus': paymentStatus,
       'customerName': customerName,
-      'customerEmail': customerId,
+      'customerEmail': customerEmail,
       'customerPhone': customerPhone,
       'shippingAddress': shippingAddress,
     };
   }
-    factory MyOrder.fromFirestore(DocumentSnapshot doc) {
+
+  factory MyOrder.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return MyOrder(
       id: doc.id,
       orderNumber: data['orderNumber'] as int? ?? -1,
       userId: data['userId'] as String? ?? 'unknown_user',
-      items: (data['items'] as List<dynamic>? ?? [])
-          .map((i) => CartItem.fromJson(i as Map<String, dynamic>))
-          .toList(),
+      items:
+          (data['items'] as List<dynamic>? ?? [])
+              .map((i) => CartItem.fromJson(i as Map<String, dynamic>))
+              .toList(),
       total: (data['total'] as num? ?? 0.0).toDouble(),
       status: data['status'] as String? ?? 'pending',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
       paymentStatus: data['paymentStatus'] as String? ?? 'unpaid',
       customerName: data['customerName'] as String? ?? 'Unknown Customer',
-      customerId: data['customerEmail'] as String? ?? 'No Email',
+      customerEmail: data['customerEmail'] as String? ?? 'No Email',
       customerPhone: data['customerPhone'] as String? ?? 'No Phone',
       shippingAddress: data['shippingAddress'] as String? ?? 'No Address',
     );
@@ -110,14 +111,21 @@ class MyOrder {
       id: map['id'] as String,
       userId: map['userId'] as String,
       orderNumber: map['orderNumber'] as int,
-      items: List<CartItem>.from((map['items'] as List<int>).map<CartItem>((x) => CartItem.fromJson(x as Map<String,dynamic>),),),
+      items: List<CartItem>.from(
+        (map['items'] as List<int>).map<CartItem>(
+          (x) => CartItem.fromJson(x as Map<String, dynamic>),
+        ),
+      ),
       total: map['total'] as double,
       status: map['status'] as String,
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int),
-      updatedAt: map['updatedAt'] != null ? DateTime.fromMillisecondsSinceEpoch(map['updatedAt'] as int) : null,
+      updatedAt:
+          map['updatedAt'] != null
+              ? DateTime.fromMillisecondsSinceEpoch(map['updatedAt'] as int)
+              : null,
       paymentStatus: map['paymentStatus'] as String,
       customerName: map['customerName'] as String,
-      customerId: map['customerEmail'] as String,
+      customerEmail: map['customerEmail'] as String,
       customerPhone: map['customerPhone'] as String,
       shippingAddress: map['shippingAddress'] as String,
     );
@@ -125,46 +133,46 @@ class MyOrder {
 
   String toJson() => json.encode(toMap());
 
-  factory MyOrder.fromJson(String source) => MyOrder.fromMap(json.decode(source) as Map<String, dynamic>);
+  factory MyOrder.fromJson(String source) =>
+      MyOrder.fromMap(json.decode(source) as Map<String, dynamic>);
 
   @override
   String toString() {
-    return 'Order(id: $id, userId: $userId,orderNumber: $orderNumber, items: $items, total: $total, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, paymentStatus: $paymentStatus, customerName: $customerName, customerEmail: $customerId, customerPhone: $customerPhone, shippingAddress: $shippingAddress)';
+    return 'Order(id: $id, userId: $userId,orderNumber: $orderNumber, items: $items, total: $total, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, paymentStatus: $paymentStatus, customerName: $customerName, customerEmail: $customerEmail, customerPhone: $customerPhone, shippingAddress: $shippingAddress)';
   }
 
   @override
   bool operator ==(covariant MyOrder other) {
     if (identical(this, other)) return true;
-  
-    return 
-      other.id == id &&
-      other.userId == userId &&
-      other.orderNumber == orderNumber &&
-      listEquals(other.items, items) &&
-      other.total == total &&
-      other.status == status &&
-      other.createdAt == createdAt &&
-      other.updatedAt == updatedAt &&
-      other.paymentStatus == paymentStatus &&
-      other.customerName == customerName &&
-      other.customerId == customerId &&
-      other.customerPhone == customerPhone &&
-      other.shippingAddress == shippingAddress;
+
+    return other.id == id &&
+        other.userId == userId &&
+        other.orderNumber == orderNumber &&
+        listEquals(other.items, items) &&
+        other.total == total &&
+        other.status == status &&
+        other.createdAt == createdAt &&
+        other.updatedAt == updatedAt &&
+        other.paymentStatus == paymentStatus &&
+        other.customerName == customerName &&
+        other.customerEmail == customerEmail &&
+        other.customerPhone == customerPhone &&
+        other.shippingAddress == shippingAddress;
   }
 
   @override
   int get hashCode {
     return id.hashCode ^
-      userId.hashCode ^
-      items.hashCode ^
-      total.hashCode ^
-      status.hashCode ^
-      createdAt.hashCode ^
-      updatedAt.hashCode ^
-      paymentStatus.hashCode ^
-      customerName.hashCode ^
-      customerId.hashCode ^
-      customerPhone.hashCode ^
-      shippingAddress.hashCode;
+        userId.hashCode ^
+        items.hashCode ^
+        total.hashCode ^
+        status.hashCode ^
+        createdAt.hashCode ^
+        updatedAt.hashCode ^
+        paymentStatus.hashCode ^
+        customerName.hashCode ^
+        customerEmail.hashCode ^
+        customerPhone.hashCode ^
+        shippingAddress.hashCode;
   }
 }
