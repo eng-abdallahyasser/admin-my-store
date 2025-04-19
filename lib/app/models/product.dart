@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -97,6 +98,40 @@ class Product {
 
   factory Product.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> json = doc.data() as Map<String, dynamic>;
+    // Convert dynamic options list to List<Option>
+  List<Option> parseOptions(List<dynamic>? optionsData) {
+    if (optionsData == null) return [];
+    
+    return optionsData.map((option) {
+      // Handle case where option might be a JSON string
+      if (option is String) {
+        try {
+          option = jsonDecode(option) as Map<String, dynamic>;
+        } catch (e) {
+          log('Error parsing option string: $e');
+          return Option(
+            min: 1,
+            max: 1,
+            optionName: 'Invalid Option',
+            variants: [],
+            choosedVariant: [],
+          );
+        }
+      }
+      
+      return Option(
+        min: option['min'] as int? ?? 1,
+        max: option['max'] as int? ?? 1,
+        optionName: option['optionName'] as String? ?? 'Unnamed Option',
+        variants: (option['variants'] as List<dynamic>?)
+            ?.map((v) => Variant.fromJson(v))
+            .toList() ?? [],
+        choosedVariant: (option['choosedVariant'] as List<dynamic>?)
+            ?.map((v) => Variant.fromJson(v))
+            .toList() ?? [],
+      );
+    }).toList();
+  }
     return Product(
       id: json['id'] ?? "",
       imagesUrl: List<String>.from(json['images'] ?? []),
@@ -113,7 +148,7 @@ class Product {
       oldPrice: (json['oldPrice'] as num?)?.toDouble() ?? 0.0,
       description: json['description'] ?? "",
       quantity: json['quantity'] ?? 1,
-      options: json['options']?? [],
+      options: parseOptions(json['options'] as List<dynamic>?),
       optionsNames: List<String>.from(json['optionsNames'] ?? []),
     );
   }

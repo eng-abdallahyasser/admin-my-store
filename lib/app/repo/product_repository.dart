@@ -1,4 +1,6 @@
 // product_repository.dart
+import 'dart:developer';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:admin_my_store/app/models/category.dart';
 import 'package:admin_my_store/app/models/product.dart';
@@ -17,6 +19,7 @@ class ProductRepository {
               .get();
       return snapshot.docs.map((doc) => Product.fromFirestore(doc)).toList();
     } catch (e) {
+      log( e.toString(), name: 'ProductRepository.getAllProducts');
       throw Exception('Failed to fetch products: $e');
     }
   }
