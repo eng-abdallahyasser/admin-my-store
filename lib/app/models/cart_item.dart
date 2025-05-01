@@ -72,4 +72,8 @@ class CartItem {
     if (value is String) return double.tryParse(value) ?? 0.0;
     return 0.0;
   }
+
+  String getVariantsString(){
+    return choosedVariant.map((variant) => variant.name).join(', ');
+  }
 }

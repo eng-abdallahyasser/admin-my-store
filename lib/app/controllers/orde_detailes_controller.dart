@@ -1,12 +1,17 @@
 import 'package:admin_my_store/app/models/my_order.dart';
+import 'package:admin_my_store/app/models/product.dart';
 import 'package:admin_my_store/app/repo/order_repository.dart';
+import 'package:admin_my_store/app/repo/product_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 
 
 class OrderDetailsController extends GetxController {
   final OrderRepository _repository = Get.find();
+  final ProductRepository _productRepository = Get.find();
+
   final Rx<MyOrder?> order = Rx<MyOrder?>(null);
+  final RxList<Product> products = <Product>[].obs;
   final RxBool isLoading = false.obs;
   final RxString error = RxString('');
 
@@ -23,6 +28,12 @@ class OrderDetailsController extends GetxController {
       isLoading(true);
       error('');
       final result = await _repository.getOrderById(orderId);
+      for (var item in result.items) {
+        final product = await _productRepository.getProductById(item.productId);
+        if (product != null) {
+          products.add(product);
+        }
+      }
       order.value = result;
     } catch (e) {
       error('Failed to load order details: ${e.toString()}');

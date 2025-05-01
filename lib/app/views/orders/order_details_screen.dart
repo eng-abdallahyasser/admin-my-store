@@ -1,5 +1,6 @@
 import 'package:admin_my_store/app/controllers/orde_detailes_controller.dart';
 import 'package:admin_my_store/app/models/my_order.dart';
+import 'package:admin_my_store/app/models/product.dart';
 import 'package:admin_my_store/app/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -36,7 +37,7 @@ class OrderDetailsScreen extends StatelessWidget {
               const SizedBox(height: 24),
               _buildStatusSelector(order),
               const SizedBox(height: 24),
-              _buildOrderItems(order),
+              _buildOrderItems(order, _controller.products),
               const SizedBox(height: 24),
               _buildCustomerInfo(order),
               const SizedBox(height: 24),
@@ -91,7 +92,7 @@ class OrderDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildOrderItems(MyOrder order) {
+  Widget _buildOrderItems(MyOrder order, List<Product> products) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -99,13 +100,39 @@ class OrderDetailsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Items:', style: TextStyle(fontSize: 16)),
-            ...order.items.map(
-              (item) => ListTile(
-                title: Text(item.productId),
-                subtitle: Text('Quantity: ${item.quantity}'),
-                trailing: Text('\$${item.totalPrice.toStringAsFixed(2)}'),
-              ),
-            ),
+            ...order.items.map((item) {
+              final product = products.firstWhere(
+                (p) =>
+                    p.id ==
+                    item.productId, // Adjust this condition based on your IDs
+              );
+              return ListTile(
+                leading: Image.network(
+                  product.imagesUrl[0],
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                ),
+                title: Text(
+                  product.title,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Category: ${product.category}'),
+                    Text('Options: ${item.getVariantsString()}'),
+                  ],
+                ),
+                trailing: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('Quantity: ${item.quantity}'),
+                    Text('\$${item.totalPrice.toStringAsFixed(2)}'),
+                  ],
+                ),
+              );
+            }),
           ],
         ),
       ),

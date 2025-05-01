@@ -53,7 +53,6 @@ class OrderController extends GetxController {
     try {
       isLoading(true);
       final response = await _repository.getOrders();
-      log(response[0].id);
       orders.value = response;
     } catch (e) {
       log(e.toString());
