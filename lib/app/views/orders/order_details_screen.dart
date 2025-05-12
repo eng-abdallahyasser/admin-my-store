@@ -105,14 +105,26 @@ class OrderDetailsScreen extends StatelessWidget {
                 (p) =>
                     p.id ==
                     item.productId, // Adjust this condition based on your IDs
+                orElse: () => Product(
+                  id: '0',
+                  colors: [],
+                  title: 'Unknown Product',
+                  imagesUrl: [],
+                  category: 'Unknown',
+                  price: 0.0,
+                ),
               );
               return ListTile(
-                leading: Image.network(
-                  product.imagesUrl[0],
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    product.imagesUrl[0],
+                    width: 60,
+                    height: 60,
+                    fit: BoxFit.cover,
+                  ),
                 ),
+                
                 title: Text(
                   product.title,
                   style: const TextStyle(fontWeight: FontWeight.bold),

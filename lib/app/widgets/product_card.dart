@@ -117,29 +117,33 @@ class ProductCard extends StatelessWidget {
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
       ),
-      child:
-          product.coverImageUnit8List != null
-              ? Image.memory(product.coverImageUnit8List!, fit: BoxFit.cover)
-              : FutureBuilder(
-                future: product.fetchCoverImage(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+        child:
+            product.coverImageUnit8List != null
+                ? Image.memory(product.coverImageUnit8List!, fit: BoxFit.cover)
+                : Image.network(product.imagesUrl[0], fit: BoxFit.cover),
+      ),
+      // FutureBuilder(
+      //   future: product.fetchCoverImage(),
+      //   builder: (context, snapshot) {
+      //     if (snapshot.connectionState == ConnectionState.waiting) {
+      //       return const Center(child: CircularProgressIndicator());
+      //     }
 
-                  if (snapshot.hasError) {
-                    return Center(child: Text("Error: ${snapshot.error}"));
-                  }
-                  final product = snapshot.data;
-                  if (product == null) {
-                    return const Text('Product not found');
-                  }
-                  return Image.memory(
-                    product.coverImageUnit8List!,
-                    fit: BoxFit.cover,
-                  );
-                },
-              ),
+      //     if (snapshot.hasError) {
+      //       return Center(child: Text("Error: ${snapshot.error}"));
+      //     }
+      //     final product = snapshot.data;
+      //     if (product == null) {
+      //       return const Text('Product not found');
+      //     }
+      //     return Image.memory(
+      //       product.coverImageUnit8List!,
+      //       fit: BoxFit.cover,
+      //     );
+      //   },
+      // ),
     );
   }
 }

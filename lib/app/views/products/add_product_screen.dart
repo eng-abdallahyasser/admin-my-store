@@ -12,7 +12,6 @@ class AddProductScreen extends StatelessWidget {
   final ProductController _controller = Get.find();
   final _formKey = GlobalKey<FormState>();
 
-  
   final _picker = ImagePicker();
 
   @override
@@ -28,10 +27,12 @@ class AddProductScreen extends StatelessWidget {
               _buildCoverImageField(),
               _buildTextField(
                 'Title',
+                _controller.titleController,
                 (value) => _controller.titleController.text = value,
               ),
               _buildTextField(
                 'Description',
+                _controller.descriptionController,
                 (value) => _controller.descriptionController.text = value,
               ),
               _buildPriceFields(),
@@ -40,18 +41,21 @@ class AddProductScreen extends StatelessWidget {
               _buildOptionsSection(),
               _buildImageUpload(),
               const SizedBox(height: 20),
-              Obx(() => CustomButton(
-                text: 'Add Product',
-                onPressed: (){_controller.isLoading.value ? null : _submitForm();},
-                isLoading: _controller.isLoading.value,
-              )),
+              Obx(
+                () => CustomButton(
+                  text: 'Add Product',
+                  onPressed: () {
+                    _controller.isLoading.value ? null : _submitForm();
+                  },
+                  isLoading: _controller.isLoading.value,
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
   }
-  
 
   Widget _buildCoverImageField() {
     return GestureDetector(
@@ -78,8 +82,13 @@ class AddProductScreen extends StatelessWidget {
     }
   }
 
-  Widget _buildTextField(String label, Function(String) onSaved) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller,
+    Function(String) onSaved,
+  ) {
     return TextFormField(
+      controller: controller,
       decoration: InputDecoration(labelText: label),
       validator: (value) => value!.isEmpty ? 'Required field' : null,
       onSaved: (value) => onSaved(value!),
