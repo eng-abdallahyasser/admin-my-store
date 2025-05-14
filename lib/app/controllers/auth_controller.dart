@@ -78,4 +78,39 @@ class AuthController extends GetxController {
       }
     });
   }
+
+  void logout() {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              Get.back(); // Close the initial confirmation dialog
+              Get.dialog(
+                const AlertDialog(
+                  title: Text('Logging out...'),
+                  content: Center(child: CircularProgressIndicator()),
+                ),
+                barrierDismissible: false, // Prevent closing the loading dialog
+              );
+              await _authRepository.signOut();
+              Get.back(); // Close the loading dialog
+              Get.offAllNamed(
+                Routes.login,
+                arguments: true,
+              ); // Navigate to the splash screen
+            },
+            child: const Text('Yes'),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back(); // Close the confirmation dialog
+            },
+            child: const Text('No'),
+          ),
+        ],
+      ),
+    );
+  }
 }
