@@ -8,6 +8,7 @@ import 'package:admin_my_store/app/views/orders/order_details_screen.dart';
 import 'package:admin_my_store/app/views/orders/order_list_screen.dart';
 import 'package:admin_my_store/app/views/products/add_product_screen.dart';
 import 'package:admin_my_store/app/views/products/edit_product_screen.dart';
+
 import 'package:get/get.dart';
 import 'package:admin_my_store/app/views/home/home_screen.dart';
 import '../bindings/product_binding.dart';

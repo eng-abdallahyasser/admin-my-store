@@ -37,44 +37,113 @@ class _EditProductScreenState extends State<EditProductScreen> {
         if (_controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
+        return LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            if (constraints.maxWidth > 600) {
+              return _buildWideLayout(context);
+            } else {
+              return _buildNarrowLayout(context);
+            }
+          },
+        );
+      }),
+    );
+  }
+
+  Widget _buildNarrowLayout(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            _buildCoverImageField(),
+            _buildTextField(
+              'Title',
+              _controller.titleController,
+              (value) => _controller.titleController.text = value,
+            ),
+            _buildTextField(
+              'Description',
+              _controller.descriptionController,
+              (value) => _controller.descriptionController.text = value,
+            ),
+            _buildPriceFields(),
+            _buildCategoryDropdown(),
+            _buildColorSelection(),
+            _buildOptionsSection(),
+            _buildImageUpload(),
+            const SizedBox(height: 20),
+            Obx(
+              () => CustomButton(
+                text: 'Save Changes',
+                onPressed: () {
+                  _controller.isLoading.value ? null : _updateProduct();
+                },
+                isLoading: _controller.isLoading.value,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWideLayout(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildCoverImageFieldWide(),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Reuse form components from AddProductScreen
-                _buildCoverImageField(),
-                _buildTextField(
-                  'Title',
-                  _controller.titleController,
-                  (value) => _controller.titleController.text = value,
+                Expanded(
+                  child: Column(
+                    children: [
+                      _buildTextField(
+                        'Title',
+                        _controller.titleController,
+                        (value) => _controller.titleController.text = value,
+                      ),
+                      _buildTextField(
+                        'Description',
+                        _controller.descriptionController,
+                        (value) =>
+                            _controller.descriptionController.text = value,
+                      ),
+                      _buildPriceFields(),
+                      _buildCategoryDropdown(),
+                      _buildColorSelection(),
+                    ],
+                  ),
                 ),
-                _buildTextField(
-                  'Description',
-                  _controller.descriptionController,
-                  (value) => _controller.descriptionController.text = value,
-                ),
-                _buildPriceFields(),
-                _buildCategoryDropdown(),
-                _buildColorSelection(),
-                _buildOptionsSection(),
-                _buildImageUpload(),
-                const SizedBox(height: 20),
-                Obx(
-                  () => CustomButton(
-                    text: 'Save Changes',
-                    onPressed: () {
-                      _controller.isLoading.value ? null : _updateProduct();
-                    },
-                    isLoading: _controller.isLoading.value,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    children: [_buildOptionsSection(), _buildImageUpload()],
                   ),
                 ),
               ],
             ),
-          ),
-        );
-      }),
+            const SizedBox(height: 20),
+            Obx(
+              () => Center(
+                child: CustomButton(
+                  text: 'Save Changes',
+                  onPressed: () {
+                    _controller.isLoading.value ? null : _updateProduct();
+                  },
+                  isLoading: _controller.isLoading.value,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -93,15 +162,46 @@ class _EditProductScreenState extends State<EditProductScreen> {
           decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
           child:
               _controller.coverImage.value != null
-                  ? Image.memory(_controller.coverImage.value!)
+                  ? Image.memory(
+                    _controller.coverImage.value!,
+                    fit: BoxFit.cover,
+                  )
                   : const Icon(Icons.add_a_photo, size: 50),
         ),
       ),
     );
   }
 
+  Widget _buildCoverImageFieldWide() {
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: _pickCoverImage,
+          child: Obx(
+            () => Container(
+              height: 200,
+              width: 300,
+              decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
+              child:
+                  _controller.coverImage.value != null
+                      ? Image.memory(
+                        _controller.coverImage.value!,
+                        fit: BoxFit.cover,
+                      )
+                      : const Icon(Icons.add_a_photo, size: 50),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        const Expanded(child: SizedBox()), // Spacer
+      ],
+    );
+  }
+
   Future<void> _pickCoverImage() async {
-    final pickedFile = await widget._picker.pickImage(source: ImageSource.gallery);
+    final pickedFile = await widget._picker.pickImage(
+      source: ImageSource.gallery,
+    );
     if (pickedFile != null) {
       final bytes = await pickedFile.readAsBytes();
       _controller.coverImage.value = bytes;
@@ -113,122 +213,150 @@ class _EditProductScreenState extends State<EditProductScreen> {
     TextEditingController controller,
     Function(String) onSaved,
   ) {
-    return TextFormField(
-      decoration: InputDecoration(labelText: label),
-      controller: controller,
-      validator: (value) => value!.isEmpty ? 'Required field' : null,
-      onSaved: (value) => onSaved(value!),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        decoration: InputDecoration(labelText: label,border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),),
+        controller: controller,
+        validator: (value) => value!.isEmpty ? 'Required field' : null,
+        onSaved: (value) => onSaved(value!),
+      ),
     );
   }
 
   Widget _buildPriceFields() {
-    return Row(
-      children: [
-        Expanded(
-          child: TextFormField(
-            controller: _controller.priceController,
-            decoration: const InputDecoration(labelText: 'Price'),
-            keyboardType: TextInputType.number,
-            validator: (value) => value!.isEmpty ? 'Required field' : null,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextFormField(
+              controller: _controller.priceController,
+              decoration:  InputDecoration(labelText: 'Price',border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),),
+              keyboardType: TextInputType.number,
+              validator: (value) => value!.isEmpty ? 'Required field' : null,
+            ),
           ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: TextFormField(
-            controller: _controller.oldPriceController,
-            decoration: const InputDecoration(labelText: 'Old Price'),
-            keyboardType: TextInputType.number,
+          const SizedBox(width: 16),
+          Expanded(
+            child: TextFormField(
+              controller: _controller.oldPriceController,
+              decoration:  InputDecoration(labelText: 'Old Price',border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),),
+              keyboardType: TextInputType.number,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildCategoryDropdown() {
-    return Obx(
-      () => DropdownButtonFormField<String>(
-        items:
-            _controller.categories
-                .map(
-                  (category) => DropdownMenuItem(
-                    value: category.name,
-                    child: Text(category.name),
-                  ),
-                )
-                .toList(),
-        onChanged: (value) => _controller.selectedCategory.value = value!,
-        decoration: InputDecoration(
-          labelText:
-              (_controller.selectedCategory.value == "")
-                  ? 'Category'
-                  : _controller.selectedCategory.value,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Obx(
+        () => DropdownButtonFormField<String>(
+          items:
+              _controller.categories
+                  .map(
+                    (category) => DropdownMenuItem(
+                      value: category.name,
+                      child: Text(category.name),
+                    ),
+                  )
+                  .toList(),
+          onChanged: (value) => _controller.selectedCategory.value = value!,
+          decoration: InputDecoration(
+            labelText:
+                (_controller.selectedCategory.value == "")
+                    ? 'Category'
+                    : _controller.selectedCategory.value,
+                    border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+          ),
+          validator:
+              (value) => value == null ? 'Please select a category' : null,
         ),
-        validator: (value) => value == null ? 'Please select a category' : null,
       ),
     );
   }
 
   Widget _buildColorSelection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Colors', style: TextStyle(fontSize: 16)),
-        Wrap(
-          spacing: 8,
-          children:
-              Colors.primaries.map((color) {
-                return GestureDetector(
-                  onTap: () => _controller.toggleColor(color),
-                  child: Obx(
-                    () => Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: color,
-                        border:
-                            _controller.selectedColors.contains(color)
-                                ? Border.all(color: Colors.black, width: 2)
-                                : null,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Colors', style: TextStyle(fontSize: 16)),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children:
+                Colors.primaries.map((color) {
+                  return GestureDetector(
+                    onTap: () => _controller.toggleColor(color),
+                    child: Obx(
+                      () => Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: color,
+                          border:
+                              _controller.selectedColors.contains(color)
+                                  ? Border.all(color: Colors.black, width: 2)
+                                  : null,
+                        ),
                       ),
                     ),
-                  ),
-                );
-              }).toList(),
-        ),
-      ],
+                  );
+                }).toList(),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildOptionsSection() {
-    return Column(
-      children: [
-        Row(
-          children: [
-            const Text('Product Options', style: TextStyle(fontSize: 16)),
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed:
-                  () => _controller.addOption(
-                    Option(
-                      min: 1,
-                      max: 1,
-                      optionName: 'option ${_controller.options.length}',
-                      choosedVariant: [],
-                      variants: [],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Product Options', style: TextStyle(fontSize: 16)),
+              IconButton(
+                icon: const Icon(Icons.add),
+                onPressed:
+                    () => _controller.addOption(
+                      Option(
+                        min: 1,
+                        max: 1,
+                        optionName: 'option ${_controller.options.length + 1}',
+                        choosedVariant: [],
+                        variants: [],
+                      ),
                     ),
-                  ),
-            ),
-          ],
-        ),
-        Obx(
-          () => Column(
-            children:
-                _controller.options
-                    .map((option) => _buildOptionForm(option))
-                    .toList(),
+              ),
+            ],
           ),
-        ),
-      ],
+          Obx(
+            () => Column(
+              children:
+                  _controller.options
+                      .map((option) => _buildOptionForm(option))
+                      .toList(),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -238,16 +366,20 @@ class _EditProductScreenState extends State<EditProductScreen> {
         TextEditingController();
 
     return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
       child: Padding(
         padding: const EdgeInsets.all(8),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Expanded(
                   child: TextFormField(
-                    decoration: const InputDecoration(labelText: 'Option Name'),
-                    initialValue: "option ${_controller.options.length}",
+                    decoration: InputDecoration(labelText: 'Option Name',border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),),
+                    initialValue: option.optionName,
                     onChanged: (value) => option.optionName = value,
                   ),
                 ),
@@ -261,15 +393,20 @@ class _EditProductScreenState extends State<EditProductScreen> {
               children: [
                 Expanded(
                   child: TextFormField(
-                    decoration: const InputDecoration(labelText: 'Min'),
+                    decoration:  InputDecoration(labelText: 'Min',border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),),
                     keyboardType: TextInputType.number,
                     initialValue: option.min.toString(),
                     onChanged: (value) => option.min = int.tryParse(value) ?? 0,
                   ),
                 ),
+                const SizedBox(width: 16),
                 Expanded(
                   child: TextFormField(
-                    decoration: const InputDecoration(labelText: 'Max'),
+                    decoration:  InputDecoration(labelText: 'Max',border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),),
                     keyboardType: TextInputType.number,
                     initialValue: option.max.toString(),
                     onChanged: (value) => option.max = int.tryParse(value) ?? 0,
@@ -278,7 +415,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            // Variant Creation UI
             const Text(
               'Variants',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -311,8 +447,10 @@ class _EditProductScreenState extends State<EditProductScreen> {
                   flex: 2,
                   child: TextFormField(
                     controller: variantNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Variant Name',
+                    decoration:  InputDecoration(
+                      labelText: 'Variant Name',border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
                     ),
                   ),
                 ),
@@ -321,8 +459,10 @@ class _EditProductScreenState extends State<EditProductScreen> {
                   flex: 2,
                   child: TextFormField(
                     controller: variantPriceController,
-                    decoration: const InputDecoration(labelText: 'Price'),
-                    keyboardType: TextInputType.numberWithOptions(
+                    decoration:  InputDecoration(labelText: 'Price',border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),),
+                    keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
                   ),
@@ -356,38 +496,55 @@ class _EditProductScreenState extends State<EditProductScreen> {
   }
 
   Widget _buildImageUpload() {
-    return Column(
-      children: [
-        const Text('Additional Images', style: TextStyle(fontSize: 16)),
-        Obx(
-          () => Wrap(
-            spacing: 8,
-            children:
-                _controller.additionalImages
-                    .map(
-                      (image) => Stack(
-                        children: [
-                          Image.memory(image, width: 80, height: 80),
-                          Positioned(
-                            right: 0,
-                            child: IconButton(
-                              icon: const Icon(Icons.close),
-                              onPressed: () {
-                                _controller.removeImage(image);
-                              },
-                            ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Additional Images', style: TextStyle(fontSize: 16)),
+          Obx(
+            () => Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children:
+                  _controller.additionalImages
+                      .map(
+                        (image) => SizedBox(
+                          width: 80,
+                          height: 80,
+                          child: Stack(
+                            children: [
+                              Image.memory(
+                                image,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                              ),
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: GestureDetector(
+                                  onTap: () => _controller.removeImage(image),
+                                  child: const Icon(
+                                    Icons.close,
+                                    size: 16,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    )
-                    .toList(),
+                        ),
+                      )
+                      .toList(),
+            ),
           ),
-        ),
-        TextButton(
-          onPressed: _pickAdditionalImages,
-          child: const Text('Add Images'),
-        ),
-      ],
+          TextButton(
+            onPressed: _pickAdditionalImages,
+            child: const Text('Add Images'),
+          ),
+        ],
+      ),
     );
   }
 

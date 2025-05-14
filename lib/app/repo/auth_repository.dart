@@ -11,16 +11,20 @@ class AuthRepository {
 
   Future<User?> signInWithEmail(String email, String password) async {
     try {
+      bool isAdmin = await checkIfUserIsAdmin(email);
+      if (!isAdmin) {
+        throw FirebaseAuthException(
+          code: 'not-admin',
+          message: 'You do not have permission to access the admin panel.',
+        );
+      }
       final credential = await _firebaseAuth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+      
       if (credential.user != null) {
-        if (await checkIfUserIsAdmin(credential.user!.uid)) {
           return credential.user;
-        } else {
-          throw Exception('User is not an admin');
-        }
       }
       return credential.user;
     } on FirebaseAuthException catch (e) {
@@ -28,14 +32,18 @@ class AuthRepository {
     }
   }
 
-  Future<bool> checkIfUserIsAdmin(String uid) async {
+  Future<bool> checkIfUserIsAdmin(String email) async {
     try {
-      // Query Firestore to check if user ID exists in "admins" collection
+      // Query Firestore to check if user email in "admins" collection
       DocumentSnapshot adminDoc =
-          await _firestore.collection('admins').doc(uid).get();
+          await _firestore.collection('admins').doc("admins").get();
 
-      // Return true if the document exists
-      return adminDoc.exists;
+      // Return true if the email exists in the admin collection
+      if (adminDoc.exists) {
+        List<String> adminEmails = List<String>.from(adminDoc['emails']);
+        return adminEmails.contains(email);
+      }
+      return false;
     } catch (e) {
       print('Error checking admin status: $e');
       return false;
