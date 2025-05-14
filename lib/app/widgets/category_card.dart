@@ -18,13 +18,19 @@ Widget build(BuildContext context) {
   return Card(
     child: Column(
       children: [
-        Container(
-          height: 120,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: NetworkImage(category.image),
-              fit: BoxFit.cover,
+        ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(12),
+            topRight: Radius.circular(12),
+          ),
+          child: Container(
+            height: 120,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: NetworkImage(category.image),
+                fit: BoxFit.cover,
+              ),
             ),
           ),
         ), // Closed Container properly
