@@ -121,4 +121,6 @@ class OrderController extends GetxController {
       isLoading(false);
     }
   }
+
+  void applyFilters() {}
 }
