@@ -96,6 +96,15 @@ class HomeScreen extends StatelessWidget {
                     titleSize,
                     () {}, // Add your route here
                   ),
+                  _buildDashboardTile(
+                    context,
+                    "Status",
+                    Icons.restaurant,
+                    Colors.brown,
+                    iconSize,
+                    titleSize,
+                    () => Get.toNamed(Routes.status),
+                  ),
                   if (!isMobile)
                     _buildDashboardTile(
                       context,

@@ -10,4 +10,5 @@ class Routes {
   static const String categories = '/categories';
   static const String addCategory = '/add-category';
   static const String customers = '/customers';
+  static const String status = '/status';
 }
