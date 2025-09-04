@@ -4,6 +4,7 @@ class RestaurantStatus {
   bool isOpen;
   String closedMessage;
   Map<String, dynamic> openingHours;
+  bool autoMode;
 
   RestaurantStatus({
     required this.id,
@@ -11,15 +12,28 @@ class RestaurantStatus {
     required this.isOpen,
     required this.closedMessage,
     required this.openingHours,
+    required this.autoMode,
   });
 
   factory RestaurantStatus.fromMap(String id, Map<String, dynamic> data) {
+    // Set default opening hours if none exist
+    Map<String, dynamic> defaultHours = {
+      'monday': {'open': '07:00', 'close': '23:00', 'enabled': true},
+      'tuesday': {'open': '07:00', 'close': '23:00', 'enabled': true},
+      'wednesday': {'open': '07:00', 'close': '23:00', 'enabled': true},
+      'thursday': {'open': '07:00', 'close': '23:00', 'enabled': true},
+      'friday': {'open': '07:00', 'close': '23:00', 'enabled': true},
+      'saturday': {'open': '08:00', 'close': '23:00', 'enabled': true},
+      'sunday': {'open': '08:00', 'close': '22:00', 'enabled': true},
+    };
+
     return RestaurantStatus(
       id: id,
       name: data['name'] ?? '',
       isOpen: data['isOpen'] ?? false,
       closedMessage: data['closedMessage'] ?? 'Restaurant is closed',
-      openingHours: Map<String, dynamic>.from(data['openingHours'] ?? {}),
+      openingHours: Map<String, dynamic>.from(data['openingHours'] ?? defaultHours),
+      autoMode: data['autoMode'] ?? true,
     );
   }
 
@@ -29,6 +43,7 @@ class RestaurantStatus {
       'isOpen': isOpen,
       'closedMessage': closedMessage,
       'openingHours': openingHours,
+      'autoMode': autoMode,
     };
   }
 }

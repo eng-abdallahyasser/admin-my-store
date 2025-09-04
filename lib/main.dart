@@ -12,18 +12,17 @@ import 'package:get/get.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // await Firebase.initializeApp(
-  //   options: const FirebaseOptions(
-  //     apiKey: 'AIzaSyDYoQedQ2t6uqJRysytvrku3rUeDCbfMo0',
-  //     authDomain: 'my-store-41300.firebaseapp.com',
-  //     projectId: 'my-store-41300',
-  //     storageBucket: 'my-store-41300.appspot.com',
-  //     messagingSenderId: '501773870758',
-  //     appId: '1:501773870758:web:82842925bbad59ac723667',
-  //   ),
-  // );
-await Firebase.initializeApp(
+  await Firebase.initializeApp(
+    options: const FirebaseOptions(
+      apiKey: 'AIzaSyDYoQedQ2t6uqJRysytvrku3rUeDCbfMo0',
+      authDomain: 'my-store-41300.firebaseapp.com',
+      projectId: 'my-store-41300',
+      storageBucket: 'my-store-41300.appspot.com',
+      messagingSenderId: '501773870758',
+      appId: '1:501773870758:web:82842925bbad59ac723667',
+    ),
   );
+
   runApp(MyApp());
 }
 

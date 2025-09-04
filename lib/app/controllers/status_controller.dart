@@ -17,6 +17,7 @@ class RestaurantStatusController extends GetxController {
   void onInit() {
     super.onInit();
     fetchRestaurantData();
+    _setupAutomaticStatusCheck();
   }
 
   // Fetch restaurant data from Firestore
@@ -27,18 +28,136 @@ class RestaurantStatusController extends GetxController {
       
       DocumentSnapshot doc = await _firestore
           .collection('status')
-          .doc('main_restaurant') // Replace with your restaurant ID
+          .doc('main_restaurant')
           .get();
       
       if (doc.exists) {
         _restaurant.value = RestaurantStatus.fromMap(doc.id, doc.data() as Map<String, dynamic>);
+        
+        // If in auto mode, check and update status based on time
+        if (_restaurant.value!.autoMode) {
+          _updateStatusBasedOnTime();
+        }
       } else {
-        error.value = 'Restaurant data not found';
+        // Create default restaurant document if it doesn't exist
+        await _createDefaultRestaurant();
       }
     } catch (e) {
       error.value = 'Failed to fetch restaurant data: $e';
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  // Create default restaurant document
+  Future<void> _createDefaultRestaurant() async {
+    try {
+      Map<String, dynamic> defaultHours = {
+        'monday': {'open': '07:00', 'close': '23:00', 'enabled': true},
+        'tuesday': {'open': '07:00', 'close': '23:00', 'enabled': true},
+        'wednesday': {'open': '07:00', 'close': '23:00', 'enabled': true},
+        'thursday': {'open': '07:00', 'close': '23:00', 'enabled': true},
+        'friday': {'open': '07:00', 'close': '23:00', 'enabled': true},
+        'saturday': {'open': '08:00', 'close': '23:00', 'enabled': true},
+        'sunday': {'open': '08:00', 'close': '22:00', 'enabled': true},
+      };
+      
+      await _firestore
+          .collection('status')
+          .doc('main_restaurant')
+          .set({
+            'name': 'Your Restaurant',
+            'isOpen': true,
+            'closedMessage': 'We are currently closed. Please check our opening hours.',
+            'openingHours': defaultHours,
+            'autoMode': true,
+          });
+      
+      // Fetch the newly created document
+      await fetchRestaurantData();
+    } catch (e) {
+      error.value = 'Failed to create restaurant: $e';
+    }
+  }
+
+  // Set up periodic status checking
+  void _setupAutomaticStatusCheck() {
+    // Check status every minute when in auto mode
+    ever(_restaurant, (restaurant) {
+      if (restaurant != null && restaurant.autoMode) {
+        _updateStatusBasedOnTime();
+      }
+    });
+  }
+
+  // Update status based on current time and configured hours
+  void _updateStatusBasedOnTime() {
+    if (_restaurant.value == null) return;
+    
+    final now = DateTime.now();
+    final currentWeekday = now.weekday; // 1=Monday, 7=Sunday
+    final currentHour = now.hour;
+    final currentMinute = now.minute;
+    
+    // Convert to minutes since midnight for easier comparison
+    final currentTimeInMinutes = currentHour * 60 + currentMinute;
+    
+    // Get weekday name
+    final weekdays = {
+      1: 'monday',
+      2: 'tuesday', 
+      3: 'wednesday',
+      4: 'thursday',
+      5: 'friday',
+      6: 'saturday',
+      7: 'sunday',
+    };
+    
+    final currentDay = weekdays[currentWeekday]!;
+    final daySchedule = _restaurant.value!.openingHours[currentDay] as Map<String, dynamic>?;
+    
+    // Check if the day is enabled
+    final isDayEnabled = daySchedule?['enabled'] ?? true;
+    if (!isDayEnabled) {
+      // Day is disabled, restaurant should be closed
+      if (_restaurant.value!.isOpen) {
+        updateRestaurantStatus(false, _restaurant.value!.closedMessage);
+      }
+      return;
+    }
+    
+    // Get opening and closing times
+    final openTimeStr = daySchedule?['open'] ?? '07:00';
+    final closeTimeStr = daySchedule?['close'] ?? '23:00';
+    
+    // Parse times
+    final openParts = openTimeStr.split(':');
+    final closeParts = closeTimeStr.split(':');
+    
+    final openHour = int.parse(openParts[0]);
+    final openMinute = int.parse(openParts[1]);
+    final closeHour = int.parse(closeParts[0]);
+    final closeMinute = int.parse(closeParts[1]);
+    
+    // Convert to minutes
+    final openTimeInMinutes = openHour * 60 + openMinute;
+    final closeTimeInMinutes = closeHour * 60 + closeMinute;
+    
+    bool shouldBeOpen;
+    
+    if (closeTimeInMinutes > openTimeInMinutes) {
+      // Normal case: close time is after open time (e.g., 7 AM to 11 PM)
+      shouldBeOpen = currentTimeInMinutes >= openTimeInMinutes && 
+                     currentTimeInMinutes < closeTimeInMinutes;
+    } else {
+      // Special case: close time is next day (e.g., 7 AM to 3 AM next day)
+      shouldBeOpen = currentTimeInMinutes >= openTimeInMinutes || 
+                     currentTimeInMinutes < closeTimeInMinutes;
+    }
+    
+    // Only update if status needs to change
+    if (_restaurant.value!.isOpen != shouldBeOpen) {
+      updateRestaurantStatus(shouldBeOpen, _restaurant.value!.closedMessage);
     }
   }
 
@@ -64,6 +183,7 @@ class RestaurantStatusController extends GetxController {
           isOpen: isOpen,
           closedMessage: closedMessage,
           openingHours: _restaurant.value!.openingHours,
+          autoMode: _restaurant.value!.autoMode,
         );
       }
       
@@ -84,17 +204,30 @@ class RestaurantStatusController extends GetxController {
     }
   }
 
-  // Update opening hours
-  Future<void> updateOpeningHours(Map<String, dynamic> openingHours) async {
+  // Update opening hours for a specific day
+  Future<void> updateOpeningHours(
+    String day, 
+    String openTime, 
+    String closeTime, 
+    bool enabled
+  ) async {
     try {
       isLoading.value = true;
       error.value = '';
+      
+      // Create updated hours map
+      final updatedHours = Map<String, dynamic>.from(_restaurant.value!.openingHours);
+      updatedHours[day] = {
+        'open': openTime,
+        'close': closeTime,
+        'enabled': enabled,
+      };
       
       await _firestore
           .collection('status')
           .doc('main_restaurant')
           .update({
-            'openingHours': openingHours,
+            'openingHours': updatedHours,
           });
       
       // Update local state
@@ -104,8 +237,14 @@ class RestaurantStatusController extends GetxController {
           name: _restaurant.value!.name,
           isOpen: _restaurant.value!.isOpen,
           closedMessage: _restaurant.value!.closedMessage,
-          openingHours: openingHours,
+          openingHours: updatedHours,
+          autoMode: _restaurant.value!.autoMode,
         );
+      }
+      
+      // If in auto mode, update status based on new hours
+      if (_restaurant.value!.autoMode) {
+        _updateStatusBasedOnTime();
       }
       
       Get.snackbar(
@@ -125,16 +264,118 @@ class RestaurantStatusController extends GetxController {
     }
   }
 
-  // Check if restaurant is open based on opening hours
-  bool get isRestaurantOpen {
-    if (_restaurant.value == null) return false;
+  // Toggle between auto and manual mode
+  Future<void> toggleAutoMode(bool autoMode) async {
+    try {
+      isLoading.value = true;
+      error.value = '';
+      
+      await _firestore
+          .collection('status')
+          .doc('main_restaurant')
+          .update({
+            'autoMode': autoMode,
+          });
+      
+      // Update local state
+      if (_restaurant.value != null) {
+        _restaurant.value = RestaurantStatus(
+          id: _restaurant.value!.id,
+          name: _restaurant.value!.name,
+          isOpen: _restaurant.value!.isOpen,
+          closedMessage: _restaurant.value!.closedMessage,
+          openingHours: _restaurant.value!.openingHours,
+          autoMode: autoMode,
+        );
+      }
+      
+      // If switching to auto mode, update status based on time
+      if (autoMode) {
+        _updateStatusBasedOnTime();
+      }
+      
+      Get.snackbar(
+        'Success',
+        'Mode changed to ${autoMode ? 'Auto' : 'Manual'}',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      error.value = 'Failed to change mode: $e';
+      Get.snackbar(
+        'Error',
+        'Failed to change mode',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Get next status change time
+  String get nextStatusChange {
+    if (_restaurant.value == null) return 'Unknown';
     
-    // If manually closed, return false
-    if (!_restaurant.value!.isOpen) return false;
+    final now = DateTime.now();
+    final currentWeekday = now.weekday;
+    final currentHour = now.hour;
+    final currentMinute = now.minute;
+    final currentTimeInMinutes = currentHour * 60 + currentMinute;
     
-    // Check opening hours logic here if needed
-    // You can implement time-based checking using the openingHours map
+    // Get weekday name mapping
+    final weekdays = {
+      1: 'monday', 2: 'tuesday', 3: 'wednesday', 4: 'thursday',
+      5: 'friday', 6: 'saturday', 7: 'sunday',
+    };
     
-    return true;
+    final dayNames = {
+      'monday': 'Monday', 'tuesday': 'Tuesday', 'wednesday': 'Wednesday',
+      'thursday': 'Thursday', 'friday': 'Friday', 'saturday': 'Saturday',
+      'sunday': 'Sunday',
+    };
+    
+    // Check today's schedule first
+    final currentDay = weekdays[currentWeekday]!;
+    final todaySchedule = _restaurant.value!.openingHours[currentDay] as Map<String, dynamic>?;
+    final isTodayEnabled = todaySchedule?['enabled'] ?? true;
+    
+    if (isTodayEnabled) {
+      final openTimeStr = todaySchedule?['open'] ?? '07:00';
+      final closeTimeStr = todaySchedule?['close'] ?? '23:00';
+      
+      final openParts = openTimeStr.split(':');
+      final closeParts = closeTimeStr.split(':');
+      
+      final openTimeInMinutes = int.parse(openParts[0]) * 60 + int.parse(openParts[1]);
+      final closeTimeInMinutes = int.parse(closeParts[0]) * 60 + int.parse(closeParts[1]);
+      
+      if (_restaurant.value!.isOpen) {
+        // Currently open, next change is at closing time
+        if (currentTimeInMinutes < closeTimeInMinutes || closeTimeInMinutes < openTimeInMinutes) {
+          return 'Today at ${closeTimeStr}';
+        }
+      } else {
+        // Currently closed, next change is at opening time
+        if (currentTimeInMinutes < openTimeInMinutes) {
+          return 'Today at ${openTimeStr}';
+        }
+      }
+    }
+    
+    // If no change today, find the next enabled day
+    for (int i = 1; i <= 7; i++) {
+      int nextDayIndex = (currentWeekday + i - 1) % 7 + 1;
+      String nextDay = weekdays[nextDayIndex]!;
+      var nextDaySchedule = _restaurant.value!.openingHours[nextDay] as Map<String, dynamic>?;
+      
+      if (nextDaySchedule?['enabled'] ?? true) {
+        String openTime = nextDaySchedule?['open'] ?? '07:00';
+        String dayName = dayNames[nextDay]!;
+        
+        if (i == 1) return 'Tomorrow at $openTime';
+        return '$dayName at $openTime';
+      }
+    }
+    
+    return 'No scheduled openings';
   }
 }

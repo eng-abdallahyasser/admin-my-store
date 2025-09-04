@@ -87,6 +87,7 @@ class HomeScreen extends StatelessWidget {
                     titleSize,
                     () => Get.toNamed(Routes.categories),
                   ),
+
                   _buildDashboardTile(
                     context,
                     "Customers",
@@ -96,6 +97,7 @@ class HomeScreen extends StatelessWidget {
                     titleSize,
                     () {}, // Add your route here
                   ),
+                  
                   _buildDashboardTile(
                     context,
                     "Status",
@@ -115,16 +117,8 @@ class HomeScreen extends StatelessWidget {
                       titleSize,
                       () {}, // Add your route here
                     ),
-                  if (!isMobile)
-                    _buildDashboardTile(
-                      context,
-                      "Settings",
-                      Icons.settings,
-                      Colors.teal,
-                      iconSize,
-                      titleSize,
-                      () {}, // Add your route here
-                    ),
+                  
+                   
                 ],
               ),
             ),
