@@ -8,6 +8,7 @@ import 'package:admin_my_store/app/views/orders/order_details_screen.dart';
 import 'package:admin_my_store/app/views/orders/order_list_screen.dart';
 import 'package:admin_my_store/app/views/products/add_product_screen.dart';
 import 'package:admin_my_store/app/views/products/edit_product_screen.dart';
+import 'package:admin_my_store/app/views/roles/user_management_screen.dart';
 import 'package:admin_my_store/app/views/status/status_screen.dart';
 
 import 'package:get/get.dart';
@@ -61,6 +62,11 @@ class AppPages {
       binding: CategoryBinding(),
     ),
     GetPage(name: Routes.status, page: () => RestaurantStatusScreen()),
+    GetPage(
+      name: Routes.userManagement,
+      page: () => UserManagementScreen(),
+      binding: AuthBinding(),
+    ),
     // GetPage(
     //   name: Routes.customers,
     //   page: () => CustomerListScreen(),

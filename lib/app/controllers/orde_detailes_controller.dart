@@ -30,10 +30,8 @@ class OrderDetailsController extends GetxController {
       final result = await _repository.getOrderById(orderId);
       for (var item in result.items) {
         final product = await _productRepository.getProductById(item.productId);
-        if (product != null) {
-          products.add(product);
-        }
-      }
+        products.add(product);
+            }
       order.value = result;
     } catch (e) {
       error('Failed to load order details: ${e.toString()}');

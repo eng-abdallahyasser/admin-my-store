@@ -1,3 +1,4 @@
+import 'package:admin_my_store/app/models/app_user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -22,9 +23,9 @@ class AuthRepository {
         email: email,
         password: password,
       );
-      
+
       if (credential.user != null) {
-          return credential.user;
+        return credential.user;
       }
       return credential.user;
     } on FirebaseAuthException catch (e) {
@@ -65,7 +66,52 @@ class AuthRepository {
   Future<User?> userData() async {
     return _firebaseAuth.currentUser;
   }
+
   Future<void> signOut() async {
     await _firebaseAuth.signOut();
+  }
+
+  Future<void> updateUserRoles(String userId, List<String> newRoles) async {
+    try {
+      await _firestore.collection('admins').doc(userId).update({
+        'roles': newRoles,
+      });
+    } catch (e) {
+      throw Exception('Failed to update user roles: $e');
+    }
+  }
+
+  Future<List<AppUser>> fetchAllUsers() async {
+    try {
+      final querySnapshot = await _firestore.collection('admins').get();
+      return querySnapshot.docs
+          .map((doc) => AppUser.fromMap(doc.id, doc.data()))
+          .toList();
+    } catch (e) {
+      throw Exception('Failed to fetch users: $e');
+    }
+  }
+
+  Future<AppUser?> getAppUserRoleData() async {
+    try {
+      final userDoc =
+          await _firestore.collection('admins').doc(currentUser?.uid).get();
+      if (userDoc.exists) {
+        return AppUser.fromMap(currentUser!.uid, userDoc.data()!);
+      } else {
+        // Create new user document if it doesn't exist
+        return null;
+      }
+    } catch (e) {
+      throw Exception('Failed to fetch user role data: $e');
+    } 
+  }
+
+  Future fetchSignInMethodsForEmail(String email) async {
+    try {
+      return await _firebaseAuth.fetchSignInMethodsForEmail(email);
+    } catch (e) {
+      throw Exception('Failed to fetch sign-in methods: $e');
+    }
   }
 }

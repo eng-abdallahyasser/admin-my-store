@@ -1,4 +1,5 @@
 import 'package:admin_my_store/app/controllers/auth_controller.dart';
+import 'package:admin_my_store/app/widgets/role_guarded_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../routes/app_routes.dart';
@@ -60,43 +61,60 @@ class HomeScreen extends StatelessWidget {
                 mainAxisSpacing: padding,
                 crossAxisSpacing: padding,
                 children: [
-                  _buildDashboardTile(
-                    context,
-                    "Products",
-                    Icons.shopping_bag,
-                    Colors.blue,
-                    iconSize,
-                    titleSize,
-                    () => Get.toNamed(Routes.products),
+                  RoleGuardedWidget(
+                    requiredPermission: 'manage_content',
+                    child: _buildDashboardTile(
+                      context,
+                      "Products",
+                      Icons.shopping_bag,
+                      Colors.blue,
+                      iconSize,
+                      titleSize,
+                      () => Get.toNamed(Routes.products),
+                    ),
                   ),
-                  _buildDashboardTile(
-                    context,
-                    "Orders",
-                    Icons.receipt,
-                    Colors.green,
-                    iconSize,
-                    titleSize,
-                    () => Get.toNamed(Routes.orders),
-                  ),
-                  _buildDashboardTile(
-                    context,
-                    "Categories",
-                    Icons.category,
-                    Colors.orange,
-                    iconSize,
-                    titleSize,
-                    () => Get.toNamed(Routes.categories),
+                  RoleGuardedWidget(
+                    requiredPermission: 'viewer',
+                    child: _buildDashboardTile(
+                      context,
+                      "Orders",
+                      Icons.receipt,
+                      Colors.green,
+                      iconSize,
+                      titleSize,
+                      () => Get.toNamed(Routes.orders),
+                    ),
                   ),
 
-                  _buildDashboardTile(
-                    context,
-                    "Customers",
-                    Icons.people,
-                    Colors.purple,
-                    iconSize,
-                    titleSize,
-                    () {}, // Add your route here
+                  RoleGuardedWidget(
+                    requiredPermission: 'manage_content',
+                    child: _buildDashboardTile(
+                      context,
+                      "Categories",
+                      Icons.category,
+                      Colors.orange,
+                      iconSize,
+                      titleSize,
+                      () => Get.toNamed(Routes.categories),
+                    ),
                   ),
+
+
+                  RoleGuardedWidget(
+                    requiredPermission: 'viewer',
+                    child: _buildDashboardTile(
+                      context,
+                      "Customers",
+                      Icons.people,
+                      Colors.purple,
+                      iconSize,
+                      titleSize,
+                      () {}, // Add your route here
+                    ),
+                  ),
+                  _buildDashboardTile(context, "Manage Roles", 
+                      Icons.admin_panel_settings, Colors.teal, iconSize, titleSize,
+                      () => Get.toNamed(Routes.userManagement)),
                   
                   _buildDashboardTile(
                     context,

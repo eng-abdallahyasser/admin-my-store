@@ -1,12 +1,20 @@
+import 'package:admin_my_store/app/models/app_user.dart';
+import 'package:admin_my_store/app/repo/app_permissions.dart';
 import 'package:admin_my_store/app/repo/auth_repository.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:admin_my_store/app/routes/app_routes.dart';
 
 class AuthController extends GetxController {
-  final AuthRepository _authRepository = Get.find();
+  final AuthRepository _authRepository = Get.find<AuthRepository>();
   final Rxn<User> user = Rxn<User>();
+  final Rx<AppUser?> appUser = Rx<AppUser?>(null);
+  final RxList<AppUser> users = RxList<AppUser>();
+  AppUser? get currentUser => appUser.value;
+
+  final RxString error = ''.obs;
   final RxBool isLoading = false.obs;
   final RxBool obscurePassword = true.obs;
   final TextEditingController emailController = TextEditingController();
@@ -15,7 +23,8 @@ class AuthController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    checkUserLoggedIn();
+    initRoleData();
+    // checkUserLoggedIn();
   }
 
   void togglePasswordVisibility() {
@@ -56,6 +65,47 @@ class AuthController extends GetxController {
       Get.snackbar('Registration Failed', e.message ?? 'Unknown error');
     } finally {
       isLoading(false);
+    }
+  }
+
+  // Check if current user has permission
+  bool hasPermission(String permission) {
+    if (appUser.value == null) return false;
+    return AppPermissions.can(permission, appUser.value!.roles);
+  }
+
+  // Check if current user has any of the required permissions
+  bool hasAnyPermission(List<String> permissions) {
+    if (appUser.value == null) return false;
+    return permissions.any(
+      (permission) => AppPermissions.can(permission, appUser.value!.roles),
+    );
+  }
+
+  // User management methods (only for admins)
+  Future<List<AppUser>> getUsers() async {
+    if (!hasPermission('manage_users')) {
+      throw Exception('Insufficient permissions');
+    }
+
+    return users.value = await _authRepository.fetchAllUsers();
+  }
+
+  Future<void> updateUserRoles(String userId, List<String> newRoles) async {
+    if (!hasPermission('manage_users')) {
+      throw Exception('Insufficient permissions');
+    }
+
+    await _authRepository.updateUserRoles(userId, newRoles);
+  }
+
+  // Check if email already exists
+  Future<bool> checkEmailExists(String email) async {
+    try {
+      final methods = await _authRepository.fetchSignInMethodsForEmail(email);
+      return methods.isNotEmpty;
+    } catch (e) {
+      return false;
     }
   }
 
@@ -112,5 +162,11 @@ class AuthController extends GetxController {
         ],
       ),
     );
+  }
+  
+  void initRoleData() async {
+    isLoading.value = true;
+    appUser.value = await _authRepository.getAppUserRoleData();
+    isLoading.value = false;
   }
 }
