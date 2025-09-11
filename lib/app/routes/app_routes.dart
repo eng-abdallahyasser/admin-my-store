@@ -13,4 +13,7 @@ class Routes {
   static const String status = '/status';
   static const String userManagement = '/user-management';
   static const String settings = '/settings';
+  static const String banners = '/banners';
+  static const String addBanner = '/add-banner';
+  static const String editBanner = '/edit-banner';
 }

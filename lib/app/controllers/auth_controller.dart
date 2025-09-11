@@ -1,7 +1,6 @@
 import 'package:admin_my_store/app/models/app_user.dart';
 import 'package:admin_my_store/app/repo/app_permissions.dart';
 import 'package:admin_my_store/app/repo/auth_repository.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';

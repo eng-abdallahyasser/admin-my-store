@@ -17,6 +17,9 @@ import '../bindings/product_binding.dart';
 import '../views/auth/login_screen.dart';
 import '../views/products/product_list_screen.dart';
 import 'app_routes.dart';
+import 'package:admin_my_store/app/bindings/banner_binding.dart';
+import 'package:admin_my_store/app/views/banners/banner_list_screen.dart';
+import 'package:admin_my_store/app/views/banners/add_edit_banner_screen.dart';
 
 class AppPages {
   static final routes = [
@@ -66,6 +69,22 @@ class AppPages {
       name: Routes.userManagement,
       page: () => UserManagementScreen(),
       binding: AuthBinding(),
+    ),
+    // Banners
+    GetPage(
+      name: Routes.banners,
+      page: () => BannerListScreen(),
+      binding: BannerBinding(),
+    ),
+    GetPage(
+      name: Routes.addBanner,
+      page: () => AddEditBannerScreen(),
+      binding: BannerBinding(),
+    ),
+    GetPage(
+      name: Routes.editBanner,
+      page: () => AddEditBannerScreen(),
+      binding: BannerBinding(),
     ),
     // GetPage(
     //   name: Routes.customers,

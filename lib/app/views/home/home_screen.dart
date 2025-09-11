@@ -74,6 +74,18 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                   RoleGuardedWidget(
+                    requiredPermission: 'manage_content',
+                    child: _buildDashboardTile(
+                      context,
+                      "Banners",
+                      Icons.image,
+                      Colors.indigo,
+                      iconSize,
+                      titleSize,
+                      () => Get.toNamed(Routes.banners),
+                    ),
+                  ),
+                  RoleGuardedWidget(
                     requiredPermission: 'view_orders',
                     child: _buildDashboardTile(
                       context,
