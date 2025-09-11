@@ -13,7 +13,7 @@ class AppPermissions {
       'manage_content'
     ],
     'editor': ['manage_content', 'view_reports'],
-    'viewer': ['view_reports'],
+    'viewer': ['view_reports', 'view_orders'],
   };
 
   static bool can(String permission, List<String> userRoles) {

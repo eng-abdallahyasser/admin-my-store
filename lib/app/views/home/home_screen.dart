@@ -74,7 +74,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                   RoleGuardedWidget(
-                    requiredPermission: 'viewer',
+                    requiredPermission: 'view_orders',
                     child: _buildDashboardTile(
                       context,
                       "Orders",
@@ -101,7 +101,7 @@ class HomeScreen extends StatelessWidget {
 
 
                   RoleGuardedWidget(
-                    requiredPermission: 'viewer',
+                    requiredPermission: 'view_orders',
                     child: _buildDashboardTile(
                       context,
                       "Customers",
