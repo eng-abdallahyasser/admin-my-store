@@ -6,10 +6,26 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 
-class UserManagementScreen extends StatelessWidget {
-  UserManagementScreen({super.key});
+class UserManagementScreen extends StatefulWidget {
+  const UserManagementScreen({super.key});
 
+  @override
+  State<UserManagementScreen> createState() => _UserManagementScreenState();
+}
+
+class _UserManagementScreenState extends State<UserManagementScreen> {
   final AuthController _authController = Get.find<AuthController>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto-load users after first frame if the user has permission
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (_authController.hasPermission('manage_users')) {
+        await _authController.getUsers();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +43,7 @@ class UserManagementScreen extends StatelessWidget {
           if (_authController.isLoading.value) {
             return Center(child: CircularProgressIndicator());
           }
-          
+
           return Padding(
             padding: EdgeInsets.all(16),
             child: Column(
@@ -43,8 +59,10 @@ class UserManagementScreen extends StatelessWidget {
                     itemCount: _authController.users.length,
                     itemBuilder: (context, index) {
                       final user = _authController.users[index];
-                      if (user.email == "") {
-                        return SizedBox.shrink(); // Skip current user
+                      // Skip the currently logged-in user
+                      final currentUid = _authController.user.value?.uid;
+                      if (currentUid != null && user.uid == currentUid) {
+                        return SizedBox.shrink();
                       }
                       return _UserRoleCard(user: user, authController: _authController);
                     },

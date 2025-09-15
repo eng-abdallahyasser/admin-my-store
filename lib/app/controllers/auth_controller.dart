@@ -22,8 +22,17 @@ class AuthController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    initRoleData();
-    // checkUserLoggedIn();
+    // Keep controller in sync with Firebase auth state
+    _authRepository.authStateChanges.listen((User? fbUser) async {
+      user.value = fbUser;
+      if (fbUser != null) {
+        // Fetch role/permission data as soon as user logs in
+        await initRoleData();
+      } else {
+        // Clear cached app user data on logout
+        appUser.value = null;
+      }
+    });
   }
 
   void togglePasswordVisibility() {
@@ -37,6 +46,8 @@ class AuthController extends GetxController {
         emailController.text.trim(),
         passwordController.text.trim(),
       );
+      // Ensure roles are loaded before navigating to Home
+      await initRoleData();
       Get.offAllNamed('/home');
     } catch (e) {
       Get.snackbar('Login Error', e.toString());
@@ -86,8 +97,14 @@ class AuthController extends GetxController {
     if (!hasPermission('manage_users')) {
       throw Exception('Insufficient permissions');
     }
-
-    return users.value = await _authRepository.fetchAllUsers();
+    isLoading.value = true;
+    try {
+      final result = await _authRepository.fetchAllUsers();
+      users.value = result;
+      return result;
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   Future<void> updateUserRoles(String userId, List<String> newRoles) async {
@@ -144,6 +161,9 @@ class AuthController extends GetxController {
                 barrierDismissible: false, // Prevent closing the loading dialog
               );
               await _authRepository.signOut();
+              // Clear state
+              appUser.value = null;
+              user.value = null;
               Get.back(); // Close the loading dialog
               Get.offAllNamed(
                 Routes.login,
@@ -163,9 +183,12 @@ class AuthController extends GetxController {
     );
   }
   
-  void initRoleData() async {
+  Future<void> initRoleData() async {
     isLoading.value = true;
-    appUser.value = await _authRepository.getAppUserRoleData();
-    isLoading.value = false;
+    try {
+      appUser.value = await _authRepository.getAppUserRoleData();
+    } finally {
+      isLoading.value = false;
+    }
   }
 }

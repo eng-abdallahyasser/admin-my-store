@@ -1,4 +1,3 @@
-import 'package:admin_my_store/app/bindings/auth_binding.dart';
 import 'package:admin_my_store/app/bindings/category_binding.dart';
 import 'package:admin_my_store/app/bindings/order_binding.dart';
 import 'package:admin_my_store/app/bindings/order_detailes_binding.dart';
@@ -27,7 +26,6 @@ class AppPages {
     GetPage(
       name: Routes.login,
       page: () => LoginScreen(),
-      binding: AuthBinding(),
     ),
     GetPage(
       name: Routes.products,
@@ -68,7 +66,6 @@ class AppPages {
     GetPage(
       name: Routes.userManagement,
       page: () => UserManagementScreen(),
-      binding: AuthBinding(),
     ),
     // Banners
     GetPage(

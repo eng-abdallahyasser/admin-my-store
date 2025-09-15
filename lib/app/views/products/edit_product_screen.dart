@@ -160,13 +160,17 @@ class _EditProductScreenState extends State<EditProductScreen> {
           height: 200,
           width: double.infinity,
           decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
-          child:
-              _controller.coverImage.value != null
-                  ? Image.memory(
-                    _controller.coverImage.value!,
-                    fit: BoxFit.cover,
-                  )
-                  : const Icon(Icons.add_a_photo, size: 50),
+          child: _controller.coverImage.value != null
+              ? Image.memory(
+                  _controller.coverImage.value!,
+                  fit: BoxFit.cover,
+                )
+              : (_controller.existingCoverImageUrl.value != null
+                  ? Image.network(
+                      _controller.existingCoverImageUrl.value!,
+                      fit: BoxFit.cover,
+                    )
+                  : const Icon(Icons.add_a_photo, size: 50)),
         ),
       ),
     );
@@ -182,13 +186,17 @@ class _EditProductScreenState extends State<EditProductScreen> {
               height: 200,
               width: 300,
               decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
-              child:
-                  _controller.coverImage.value != null
-                      ? Image.memory(
-                        _controller.coverImage.value!,
-                        fit: BoxFit.cover,
-                      )
-                      : const Icon(Icons.add_a_photo, size: 50),
+              child: _controller.coverImage.value != null
+                  ? Image.memory(
+                      _controller.coverImage.value!,
+                      fit: BoxFit.cover,
+                    )
+                  : (_controller.existingCoverImageUrl.value != null
+                      ? Image.network(
+                          _controller.existingCoverImageUrl.value!,
+                          fit: BoxFit.cover,
+                        )
+                      : const Icon(Icons.add_a_photo, size: 50)),
             ),
           ),
         ),
@@ -507,36 +515,66 @@ class _EditProductScreenState extends State<EditProductScreen> {
               spacing: 8,
               runSpacing: 8,
               children:
-                  _controller.additionalImages
-                      .map(
-                        (image) => SizedBox(
-                          width: 80,
-                          height: 80,
-                          child: Stack(
-                            children: [
-                              Image.memory(
-                                image,
-                                width: 80,
-                                height: 80,
-                                fit: BoxFit.cover,
-                              ),
-                              Positioned(
-                                right: 0,
-                                top: 0,
-                                child: GestureDetector(
-                                  onTap: () => _controller.removeImage(image),
-                                  child: const Icon(
-                                    Icons.close,
-                                    size: 16,
-                                    color: Colors.red,
-                                  ),
+                  [
+                    // Existing images from Firestore (by URL)
+                    ..._controller.existingImageUrls.map(
+                      (url) => SizedBox(
+                        width: 80,
+                        height: 80,
+                        child: Stack(
+                          children: [
+                            Image.network(
+                              url,
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                            ),
+                            Positioned(
+                              right: 0,
+                              top: 0,
+                              child: GestureDetector(
+                                onTap: () => _controller.removeExistingImage(url),
+                                child: const Icon(
+                                  Icons.close,
+                                  size: 16,
+                                  color: Colors.red,
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      )
-                      .toList(),
+                      ),
+                    ),
+                    // Newly added images (Uint8List)
+                    ..._controller.newAdditionalImages.map(
+                      (image) => SizedBox(
+                        width: 80,
+                        height: 80,
+                        child: Stack(
+                          children: [
+                            Image.memory(
+                              image,
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                            ),
+                            Positioned(
+                              right: 0,
+                              top: 0,
+                              child: GestureDetector(
+                                onTap: () => _controller.removeNewImage(image),
+                                child: const Icon(
+                                  Icons.close,
+                                  size: 16,
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
             ),
           ),
           TextButton(
@@ -552,7 +590,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
     final pickedFiles = await widget._picker.pickMultiImage();
     for (var file in pickedFiles) {
       final bytes = await file.readAsBytes();
-      _controller.additionalImages.add(bytes);
+      _controller.newAdditionalImages.add(bytes);
     }
   }
 }
