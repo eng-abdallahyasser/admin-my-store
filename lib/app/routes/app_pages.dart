@@ -19,6 +19,8 @@ import 'app_routes.dart';
 import 'package:admin_my_store/app/bindings/banner_binding.dart';
 import 'package:admin_my_store/app/views/banners/banner_list_screen.dart';
 import 'package:admin_my_store/app/views/banners/add_edit_banner_screen.dart';
+import 'package:admin_my_store/app/bindings/feedback_binding.dart';
+import 'package:admin_my_store/app/views/feedback/feedback_list_screen.dart';
 
 class AppPages {
   static final routes = [
@@ -82,6 +84,12 @@ class AppPages {
       name: Routes.editBanner,
       page: () => AddEditBannerScreen(),
       binding: BannerBinding(),
+    ),
+    // Feedback
+    GetPage(
+      name: Routes.feedback,
+      page: () => FeedbackListScreen(),
+      binding: FeedbackBinding(),
     ),
     // GetPage(
     //   name: Routes.customers,

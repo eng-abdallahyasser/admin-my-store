@@ -16,4 +16,5 @@ class Routes {
   static const String banners = '/banners';
   static const String addBanner = '/add-banner';
   static const String editBanner = '/edit-banner';
+  static const String feedback = '/feedback';
 }
