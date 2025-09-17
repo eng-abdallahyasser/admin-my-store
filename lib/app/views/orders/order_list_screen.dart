@@ -20,16 +20,56 @@ class OrderListScreen extends StatelessWidget {
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: _showFilterDialog,
-            tooltip: 'Filter Orders',
-          ),
-          IconButton(
             icon: const Icon(Icons.search),
             onPressed: _showSearchDialog,
             tooltip: 'Search Orders',
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(58),
+          child: Obx(
+            () => Container(
+              width: double.infinity,
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    ..._controller.statusList.map((status) {
+                      final selected = _controller.selectedStatus.contains(status);
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: FilterChip(
+                          label: Text(status),
+                          selected: selected,
+                          onSelected: (_) => _controller.toggleStatusFilter(status),
+                          selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                          checkmarkColor: Theme.of(context).colorScheme.primary,
+                        ),
+                      );
+                    }).toList(),
+                    if (_controller.selectedStatus.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4.0),
+                        child: TextButton.icon(
+                          onPressed: () {
+                            // Clear all selected filters
+                            final toClear = List<String>.from(_controller.selectedStatus);
+                            for (final s in toClear) {
+                              _controller.toggleStatusFilter(s);
+                            }
+                          },
+                          icon: const Icon(Icons.clear_all, size: 18),
+                          label: const Text('Clear'),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
       body: Obx(() {
         if (_controller.isLoading.value) {

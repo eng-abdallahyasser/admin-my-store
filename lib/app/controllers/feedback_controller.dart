@@ -13,10 +13,10 @@ class FeedbackController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxString error = ''.obs;
 
-  final RxString selectedType = 'All'.obs; // All, Suggestion, Bug, Complaint, Other
+  final RxString selectedType = FeedbackTypes.all.obs; // All, Suggestion, Bug, Complaint, Others
   StreamSubscription<List<FeedbackItem>>? _sub;
 
-  List<String> get types => const ['All', 'Suggestion', 'Bug', 'Complaint', 'Other'];
+  List<String> get types => FeedbackTypes.listWithAll;
 
   @override
   void onInit() {
@@ -35,7 +35,7 @@ class FeedbackController extends GetxController {
 
   List<FeedbackItem> get filtered {
     final t = selectedType.value;
-    if (t == 'All') return feedbacks;
+    if (t == FeedbackTypes.all) return feedbacks;
     return feedbacks.where((f) => f.type == t).toList();
   }
 
