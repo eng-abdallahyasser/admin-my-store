@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:html' as html;
 
 import 'package:admin_my_store/app/models/my_order.dart';
 import 'package:admin_my_store/app/repo/order_repository.dart';
@@ -21,7 +22,10 @@ class OrderController extends GetxController {
   late StreamSubscription<QuerySnapshot> _ordersSubscription;
   bool _initialized = false; // avoid notifying on initial snapshot
   AudioPlayer? _alertPlayer; // used to play looping alert sound
+  html.AudioElement? _webAudioElement; // Fallback for web
   bool _alerting = false;
+  // Exposed flag so UI can prompt user to enable sound on web
+  final RxBool soundReady = false.obs;
 
   final List<String> statusList = [
     'Pending',
@@ -37,9 +41,11 @@ class OrderController extends GetxController {
     _startListening();
     _alertPlayer = AudioPlayer();
     _alertPlayer!.setReleaseMode(ReleaseMode.loop);
-    // Preload and start muted looping to satisfy web autoplay policies
-    // When an alert arrives, we'll raise the volume to 1.0 immediately
-    _prewarmAlertLoop();
+    // On mobile/desktop native, we can prewarm immediately.
+    // On web, defer prewarm until a user gesture calls initializeSoundIfNeeded().
+    if (!kIsWeb) {
+      _prewarmAlertLoop().then((_) => soundReady.value = true);
+    }
     super.onInit();
   }
 
@@ -47,6 +53,8 @@ class OrderController extends GetxController {
   void onClose() {
     _ordersSubscription.cancel();
     _alertPlayer?.dispose();
+    _webAudioElement?.pause();
+    _webAudioElement = null;
     super.onClose();
   }
 
@@ -76,31 +84,91 @@ class OrderController extends GetxController {
   Future<void> acknowledgeNewOrders() async {
     try {
       // Lower volume back to 0.0 but keep looping to maintain autoplay allowance
-      await _alertPlayer?.setVolume(0.0);
-    } catch (_) {}
+      log('Acknowledging new orders, setting volume to 0.0');
+      if (kIsWeb && _webAudioElement != null) {
+        _webAudioElement!.volume = 0.0;
+      } else {
+        await _alertPlayer?.setVolume(0.0);
+      }
+    } catch (e, s) {
+      log('Error setting volume to 0 in acknowledgeNewOrders: $e', stackTrace: s);
+    }
     _alerting = false;
     if (Get.isDialogOpen!) Get.back();
   }
 
   Future<void> _prewarmAlertLoop() async {
     try {
-      // Start playing looped asset at zero volume
-      await _alertPlayer?.setVolume(0.0);
-      await _alertPlayer?.play(AssetSource('sounds/new_order.mp3'));
-    } catch (_) {
-      // As a fallback on mobile devices, ensure at least a system sound works later
+      log('Prewarming alert loop...');
+      if (kIsWeb) {
+        // Use HTML5 Audio directly on web to avoid platform channel issues
+        _webAudioElement = html.AudioElement('assets/assets/sounds/new_order.mp3')
+          ..loop = true
+          ..volume = 0.0
+          ..load();
+        await _webAudioElement!.play();
+        log('Web audio prewarm successful.');
+      } else {
+        // Use audioplayers on mobile/desktop
+        await _alertPlayer?.setVolume(0.0);
+        await _alertPlayer?.play(AssetSource('sounds/new_order.mp3'));
+        log('Audioplayers prewarm successful.');
+      }
+    } catch (e, s) {
+      log('Error prewarming alert loop: $e', stackTrace: s);
+      // Fallback will be handled in _raiseAlertVolume
+    }
+  }
+
+  /// Call this from a user gesture (e.g., a button tap) to enable sound on web.
+  Future<void> initializeSoundIfNeeded() async {
+    if (soundReady.value) return;
+    log('Initializing sound for web via user gesture...');
+    await _prewarmAlertLoop();
+    soundReady.value = true;
+    try {
+      Get.snackbar('Sound enabled', 'Audio alerts will play for new orders');
+    } catch (e) {
+      log('Could not show "Sound enabled" snackbar: $e');
     }
   }
 
   Future<void> _raiseAlertVolume() async {
     try {
-      await _alertPlayer?.setVolume(1.0);
-    } catch (_) {
-      // Fallback attempts (mobile native or system sound)
+      log('New order received, raising alert volume to 1.0...');
+      if (kIsWeb && _webAudioElement != null) {
+        // Use HTML5 Audio on web
+        _webAudioElement!.volume = 1.0;
+        if (_webAudioElement!.paused) {
+          await _webAudioElement!.play();
+        }
+        log('Web audio volume raised successfully.');
+      } else {
+        // Use audioplayers on mobile/desktop
+        await _alertPlayer?.setVolume(1.0);
+        log('Audioplayers volume raised successfully.');
+      }
+    } catch (e, s) {
+      log('Error raising alert volume: $e', stackTrace: s);
+      // Fallback attempts
       try {
-        if (!kIsWeb) await FlutterRingtonePlayer.playNotification();
-      } catch (_) {
-        try { await SystemSound.play(SystemSoundType.alert); } catch (_) {}
+        if (kIsWeb) {
+          // Emergency web fallback - create new audio element
+          final emergency = html.AudioElement('assets/assets/sounds/new_order.mp3')
+            ..loop = true
+            ..volume = 1.0;
+          await emergency.play();
+          log('Emergency web audio fallback successful.');
+        } else {
+          await FlutterRingtonePlayer.playNotification();
+        }
+      } catch (e2, s2) {
+        log('Could not play fallback notification sound: $e2', stackTrace: s2);
+        try {
+          await SystemSound.play(SystemSoundType.alert);
+        } catch (e3, s3) {
+          log('Could not play system alert sound: $e3', stackTrace: s3);
+        }
       }
     }
   }

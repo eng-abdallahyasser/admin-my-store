@@ -7,6 +7,7 @@ class OrderBinding implements Bindings {
   @override
   void dependencies() {
     Get.lazyPut<OrderRepository>(() => OrderRepository());
-    Get.lazyPut<OrderController>(() => OrderController());
+    // Make OrderController persistent to preserve filter state across navigation
+    Get.put<OrderController>(OrderController(), permanent: true);
   }
 }

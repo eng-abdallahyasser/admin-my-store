@@ -1,4 +1,5 @@
 import 'package:admin_my_store/app/models/restaurant_status.dart';
+import 'package:admin_my_store/app/models/terms.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 
@@ -7,9 +8,19 @@ class RestaurantStatusController extends GetxController {
 
   final Rx<RestaurantStatus?> _restaurant = Rx<RestaurantStatus?>(null);
   RestaurantStatus? get restaurant => _restaurant.value;
+  // Legacy list-based Terms (no longer used in UI)
+  final RxList<Terms> terms = <Terms>[].obs;
   
   final RxBool isLoading = false.obs;
   final RxString error = ''.obs;
+  // Privacy Policy (single doc)
+  final RxString privacyTitle = ''.obs;
+  final RxString privacyContent = ''.obs;
+  final Rxn<Timestamp> privacyUpdatedAt = Rxn<Timestamp>();
+  // Terms (single doc)
+  final RxString termsTitleDoc = ''.obs;
+  final RxString termsContentDoc = ''.obs;
+  final Rxn<Timestamp> termsUpdatedAtDoc = Rxn<Timestamp>();
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -17,8 +28,56 @@ class RestaurantStatusController extends GetxController {
   void onInit() {
     super.onInit();
     fetchRestaurantData();
+    // fetchTerms(); // no longer used in UI
+    fetchPrivacyPolicy();
+    fetchTermsDoc();
     _setupAutomaticStatusCheck();
   }
+  Future<void> fetchTermsDoc() async {
+  try {
+    final doc = await _firestore.collection('app_config').doc('terms').get();
+    if (doc.exists) {
+      final data = doc.data() as Map<String, dynamic>;
+      termsTitleDoc.value = data['title'] ?? '';
+      termsContentDoc.value = data['content'] ?? '';
+      termsUpdatedAtDoc.value = data['updatedAt'];
+    } else {
+      termsTitleDoc.value = '';
+      termsContentDoc.value = '';
+      termsUpdatedAtDoc.value = null;
+    }
+  } catch (e) {
+    error.value = 'Failed to fetch terms doc: $e';
+  }
+}
+
+Future<void> saveTermsDoc({required String title, required String content}) async {
+  try {
+    isLoading.value = true;
+    error.value = '';
+    await _firestore.collection('app_config').doc('terms').set({
+      'title': title,
+      'content': content,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    await fetchTermsDoc();
+    Get.snackbar(
+      'Success',
+      'Terms saved',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  } catch (e) {
+    error.value = 'Failed to save terms: $e';
+    Get.snackbar(
+      'Error',
+      'Failed to save terms',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  } finally {
+    isLoading.value = false;
+  }
+}
 
   // Fetch restaurant data from Firestore
   Future<void> fetchRestaurantData() async {
@@ -71,6 +130,7 @@ class RestaurantStatusController extends GetxController {
             'closedMessage': 'We are currently closed. Please check our opening hours.',
             'openingHours': defaultHours,
             'autoMode': true,
+            'minAppVersion': '1.0.0',
           });
       
       // Fetch the newly created document
@@ -161,156 +221,6 @@ class RestaurantStatusController extends GetxController {
     }
   }
 
-  // Update restaurant status
-  Future<void> updateRestaurantStatus(bool isOpen, String closedMessage) async {
-    try {
-      isLoading.value = true;
-      error.value = '';
-      
-      await _firestore
-          .collection('status')
-          .doc('main_restaurant')
-          .update({
-            'isOpen': isOpen,
-            'closedMessage': closedMessage,
-          });
-      
-      // Update local state
-      if (_restaurant.value != null) {
-        _restaurant.value = RestaurantStatus(
-          id: _restaurant.value!.id,
-          name: _restaurant.value!.name,
-          isOpen: isOpen,
-          closedMessage: closedMessage,
-          openingHours: _restaurant.value!.openingHours,
-          autoMode: _restaurant.value!.autoMode,
-        );
-      }
-      
-      Get.snackbar(
-        'Success',
-        'Restaurant status updated successfully',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } catch (e) {
-      error.value = 'Failed to update restaurant status: $e';
-      Get.snackbar(
-        'Error',
-        'Failed to update restaurant status',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  // Update opening hours for a specific day
-  Future<void> updateOpeningHours(
-    String day, 
-    String openTime, 
-    String closeTime, 
-    bool enabled
-  ) async {
-    try {
-      isLoading.value = true;
-      error.value = '';
-      
-      // Create updated hours map
-      final updatedHours = Map<String, dynamic>.from(_restaurant.value!.openingHours);
-      updatedHours[day] = {
-        'open': openTime,
-        'close': closeTime,
-        'enabled': enabled,
-      };
-      
-      await _firestore
-          .collection('status')
-          .doc('main_restaurant')
-          .update({
-            'openingHours': updatedHours,
-          });
-      
-      // Update local state
-      if (_restaurant.value != null) {
-        _restaurant.value = RestaurantStatus(
-          id: _restaurant.value!.id,
-          name: _restaurant.value!.name,
-          isOpen: _restaurant.value!.isOpen,
-          closedMessage: _restaurant.value!.closedMessage,
-          openingHours: updatedHours,
-          autoMode: _restaurant.value!.autoMode,
-        );
-      }
-      
-      // If in auto mode, update status based on new hours
-      if (_restaurant.value!.autoMode) {
-        _updateStatusBasedOnTime();
-      }
-      
-      Get.snackbar(
-        'Success',
-        'Opening hours updated successfully',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } catch (e) {
-      error.value = 'Failed to update opening hours: $e';
-      Get.snackbar(
-        'Error',
-        'Failed to update opening hours',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  // Toggle between auto and manual mode
-  Future<void> toggleAutoMode(bool autoMode) async {
-    try {
-      isLoading.value = true;
-      error.value = '';
-      
-      await _firestore
-          .collection('status')
-          .doc('main_restaurant')
-          .update({
-            'autoMode': autoMode,
-          });
-      
-      // Update local state
-      if (_restaurant.value != null) {
-        _restaurant.value = RestaurantStatus(
-          id: _restaurant.value!.id,
-          name: _restaurant.value!.name,
-          isOpen: _restaurant.value!.isOpen,
-          closedMessage: _restaurant.value!.closedMessage,
-          openingHours: _restaurant.value!.openingHours,
-          autoMode: autoMode,
-        );
-      }
-      
-      // If switching to auto mode, update status based on time
-      if (autoMode) {
-        _updateStatusBasedOnTime();
-      }
-      
-      Get.snackbar(
-        'Success',
-        'Mode changed to ${autoMode ? 'Auto' : 'Manual'}',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } catch (e) {
-      error.value = 'Failed to change mode: $e';
-      Get.snackbar(
-        'Error',
-        'Failed to change mode',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
   // Get next status change time
   String get nextStatusChange {
     if (_restaurant.value == null) return 'Unknown';
@@ -377,5 +287,320 @@ class RestaurantStatusController extends GetxController {
     }
     
     return 'No scheduled openings';
+  }
+
+  // Update restaurant status
+  Future<void> updateRestaurantStatus(bool isOpen, String closedMessage) async {
+    try {
+      isLoading.value = true;
+      error.value = '';
+      
+      await _firestore
+          .collection('status')
+          .doc('main_restaurant')
+          .update({
+            'isOpen': isOpen,
+            'closedMessage': closedMessage,
+          });
+      
+      // Update local state
+      if (_restaurant.value != null) {
+        _restaurant.value = RestaurantStatus(
+          id: _restaurant.value!.id,
+          name: _restaurant.value!.name,
+          isOpen: isOpen,
+          closedMessage: closedMessage,
+          openingHours: _restaurant.value!.openingHours,
+          autoMode: _restaurant.value!.autoMode,
+          minAppVersion: _restaurant.value!.minAppVersion,
+        );
+      }
+      
+      Get.snackbar(
+        'Success',
+        'Restaurant status updated successfully',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      error.value = 'Failed to update restaurant status: $e';
+      Get.snackbar(
+        'Error',
+        'Failed to update restaurant status',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Update opening hours for a specific day
+  Future<void> updateOpeningHours(
+    String day, 
+    String openTime, 
+    String closeTime, 
+    bool enabled
+  ) async {
+    try {
+      isLoading.value = true;
+      error.value = '';
+      
+      // Create updated hours map
+      final updatedHours = Map<String, dynamic>.from(_restaurant.value!.openingHours);
+      updatedHours[day] = {
+        'open': openTime,
+        'close': closeTime,
+        'enabled': enabled,
+      };
+      
+      await _firestore
+          .collection('status')
+          .doc('main_restaurant')
+          .update({
+            'openingHours': updatedHours,
+          });
+      
+      // Update local state
+      if (_restaurant.value != null) {
+        _restaurant.value = RestaurantStatus(
+          id: _restaurant.value!.id,
+          name: _restaurant.value!.name,
+          isOpen: _restaurant.value!.isOpen,
+          closedMessage: _restaurant.value!.closedMessage,
+          openingHours: updatedHours,
+          autoMode: _restaurant.value!.autoMode,
+          minAppVersion: _restaurant.value!.minAppVersion,
+        );
+      }
+      
+      // If in auto mode, update status based on new hours
+      if (_restaurant.value!.autoMode) {
+        _updateStatusBasedOnTime();
+      }
+      
+      Get.snackbar(
+        'Success',
+        'Opening hours updated successfully',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      error.value = 'Failed to update opening hours: $e';
+      Get.snackbar(
+        'Error',
+        'Failed to update opening hours',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Toggle between auto and manual mode
+  Future<void> toggleAutoMode(bool autoMode) async {
+    try {
+      isLoading.value = true;
+      error.value = '';
+      
+      await _firestore
+          .collection('status')
+          .doc('main_restaurant')
+          .update({
+            'autoMode': autoMode,
+          });
+      
+      // Update local state
+      if (_restaurant.value != null) {
+        _restaurant.value = RestaurantStatus(
+          id: _restaurant.value!.id,
+          name: _restaurant.value!.name,
+          isOpen: _restaurant.value!.isOpen,
+          closedMessage: _restaurant.value!.closedMessage,
+          openingHours: _restaurant.value!.openingHours,
+          autoMode: autoMode,
+          minAppVersion: _restaurant.value!.minAppVersion,
+        );
+      }
+      
+      // If switching to auto mode, update status based on time
+      if (autoMode) {
+        _updateStatusBasedOnTime();
+      }
+      
+      Get.snackbar(
+        'Success',
+        'Mode changed to ${autoMode ? 'Auto' : 'Manual'}',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      error.value = 'Failed to change mode: $e';
+      Get.snackbar(
+        'Error',
+        'Failed to change mode',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Update minimum app version required for mobile app
+  Future<void> updateMinAppVersion(String version) async {
+    try {
+      isLoading.value = true;
+      error.value = '';
+      await _firestore
+          .collection('status')
+          .doc('main_restaurant')
+          .update({'minAppVersion': version});
+
+      if (_restaurant.value != null) {
+        _restaurant.value = RestaurantStatus(
+          id: _restaurant.value!.id,
+          name: _restaurant.value!.name,
+          isOpen: _restaurant.value!.isOpen,
+          closedMessage: _restaurant.value!.closedMessage,
+          openingHours: _restaurant.value!.openingHours,
+          autoMode: _restaurant.value!.autoMode,
+          minAppVersion: version,
+        );
+      }
+
+      Get.snackbar(
+        'Success',
+        'Minimum app version updated',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      error.value = 'Failed to update minimum app version: $e';
+      Get.snackbar(
+        'Error',
+        'Failed to update minimum app version',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // TERMS MANAGEMENT
+  Future<void> fetchTerms() async {
+    try {
+      final qs = await _firestore
+          .collection('terms')
+          .orderBy('updatedAt', descending: true)
+          .get();
+      terms.value = qs.docs
+          .map((d) => Terms.fromMap(d.id, d.data()))
+          .toList();
+    } catch (e) {
+      error.value = 'Failed to fetch terms: $e';
+    }
+  }
+
+  Future<void> addOrUpdateTerm({
+    String? id,
+    required String title,
+    required String content,
+    required String version,
+  }) async {
+    try {
+      isLoading.value = true;
+      error.value = '';
+      final data = {
+        'title': title,
+        'content': content,
+        'version': version,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+      if (id == null) {
+        await _firestore.collection('terms').add(data);
+      } else {
+        await _firestore.collection('terms').doc(id).update(data);
+      }
+      await fetchTerms();
+      Get.snackbar(
+        'Success',
+        id == null ? 'Term added' : 'Term updated',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      error.value = 'Failed to save term: $e';
+      Get.snackbar(
+        'Error',
+        'Failed to save term',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> deleteTerm(String id) async {
+    try {
+      isLoading.value = true;
+      error.value = '';
+      await _firestore.collection('terms').doc(id).delete();
+      await fetchTerms();
+      Get.snackbar(
+        'Success',
+        'Term deleted',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      error.value = 'Failed to delete term: $e';
+      Get.snackbar(
+        'Error',
+        'Failed to delete term',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // PRIVACY POLICY MANAGEMENT (single document: app_config/privacy_policy)
+  Future<void> fetchPrivacyPolicy() async {
+    try {
+      final doc = await _firestore.collection('app_config').doc('privacy_policy').get();
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        privacyTitle.value = data['title'] ?? '';
+        privacyContent.value = data['content'] ?? '';
+        privacyUpdatedAt.value = data['updatedAt'];
+      } else {
+        privacyTitle.value = '';
+        privacyContent.value = '';
+        privacyUpdatedAt.value = null;
+      }
+    } catch (e) {
+      error.value = 'Failed to fetch privacy policy: $e';
+    }
+  }
+
+  Future<void> savePrivacyPolicy({required String title, required String content}) async {
+    try {
+      isLoading.value = true;
+      error.value = '';
+      await _firestore.collection('app_config').doc('privacy_policy').set({
+        'title': title,
+        'content': content,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      await fetchPrivacyPolicy();
+      Get.snackbar(
+        'Success',
+        'Privacy Policy saved',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      error.value = 'Failed to save privacy policy: $e';
+      Get.snackbar(
+        'Error',
+        'Failed to save privacy policy',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isLoading.value = false;
+    }
   }
 }

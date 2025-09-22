@@ -1,10 +1,16 @@
+import 'dart:convert';
+
 import 'package:admin_my_store/app/controllers/orde_detailes_controller.dart';
+import 'package:admin_my_store/app/models/address.dart';
 import 'package:admin_my_store/app/models/my_order.dart';
 import 'package:admin_my_store/app/models/product.dart';
 import 'package:admin_my_store/app/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 
 class OrderDetailsScreen extends StatelessWidget {
   final orderId = Get.arguments as String;
@@ -14,6 +20,9 @@ class OrderDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDesktop = screenWidth > 1200;
+    
     return Scaffold(
       appBar: AppBar(title: const Text('Order Details')),
       body: Obx(() {
@@ -28,27 +37,130 @@ class OrderDetailsScreen extends StatelessWidget {
           _controller.loadOrderDetails(orderId);
           return const Center(child: CircularProgressIndicator());
         }
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildOrderInfo(order),
-              const SizedBox(height: 24),
-              _buildStatusSelector(order),
-              const SizedBox(height: 24),
-              _buildOrderItems(order, _controller.products),
-              const SizedBox(height: 24),
-              _buildCustomerInfo(order),
-              const SizedBox(height: 24),
-              _buildActions(order),
-            ],
-          ),
-        );
+        
+        if (isDesktop) {
+          return _buildDesktopLayout(context, order);
+        } else {
+          return _buildMobileLayout(order);
+        }
       }),
     );
   }
 
+  Widget _buildDesktopLayout(BuildContext context, MyOrder order) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Left half - Order details
+        Expanded(
+          flex: 1,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildOrderInfo(order),
+                const SizedBox(height: 24),
+                _buildStatusSelector(order),
+                const SizedBox(height: 24),
+                _buildOrderItems(order, _controller.products),
+                const SizedBox(height: 24),
+                _buildCustomerInfo(order),
+                const SizedBox(height: 24),
+                _buildActions(order),
+              ],
+            ),
+          ),
+        ),
+        // Right half - Map
+        Expanded(
+          flex: 1,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height - kToolbarHeight - 32,
+              child: _buildMapSection(order),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileLayout(MyOrder order) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildOrderInfo(order),
+          const SizedBox(height: 24),
+          _buildStatusSelector(order),
+          const SizedBox(height: 24),
+          _buildOrderItems(order, _controller.products),
+          const SizedBox(height: 24),
+          _buildCustomerInfo(order),
+          const SizedBox(height: 24),
+          _buildMapSection(order),
+          const SizedBox(height: 24),
+          _buildActions(order),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMapSection(MyOrder order) {
+    Address address = Address.fromCompactAddress(order.shippingAddress);
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Delivery Location',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+                  height: 600,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: FlutterMap(
+                      options: MapOptions(
+                        initialCenter: LatLng(address.latitude, address.longitude),
+                        initialZoom: 15.0,
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          subdomains: const ['a', 'b', 'c'],
+                        ),
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              width: 40,
+                              height: 40,
+                              point: LatLng(address.latitude, address.longitude),
+                              child: const Icon(
+                                Icons.location_pin,
+                                color: Colors.red,
+                                size: 40,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+          ],
+        ),
+      ),
+    );
+  }
   Widget _buildOrderInfo(MyOrder order) {
     return Card(
       child: Padding(
@@ -158,17 +270,197 @@ class OrderDetailsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Customer Info:', style: TextStyle(fontSize: 16)),
+            const Text('Customer Info:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
             _buildInfoRow('Name:', order.customerName),
             _buildInfoRow('Email:', order.customerEmail),
             _buildInfoRow('Phone:', order.customerPhone),
-            const SizedBox(height: 8),
-            const Text('Shipping Address:', style: TextStyle(fontSize: 16)),
-            Text(order.shippingAddress),
+            const SizedBox(height: 16),
+            _buildShippingAddressSection(order),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildShippingAddressSection(MyOrder order) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Shipping Address:',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            IconButton(
+              onPressed: () => _copyAddressToClipboard(order.shippingAddress),
+              icon: const Icon(Icons.copy, size: 20),
+              tooltip: 'Copy Address',
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.blue.withOpacity(0.1),
+                foregroundColor: Colors.blue,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: _buildAddressContent(order.shippingAddress),
+        ),
+        
+      ],
+    );
+  }
+
+  Widget _buildAddressContent(String address) {
+    // Try to parse if it's a JSON string (new format with detailed fields)
+    try {
+      if (address.contains('{') && address.contains('}')) {
+        // Try to parse as JSON and extract address fields
+        final addressData = json.decode(address) as Map<String, dynamic>;
+        return _buildStructuredAddress(addressData);
+      } else {
+        // Simple address string - display with better formatting
+        return _buildSimpleAddress(address);
+      }
+    } catch (e) {
+      // Fallback to simple text display
+      return _buildSimpleAddress(address);
+    }
+  }
+
+  Widget _buildStructuredAddress(Map<String, dynamic> addressData) {
+    final addressFields = [
+      {'key': 'name', 'label': 'Name', 'arabic': ''},
+      {'key': 'address', 'label': 'Address', 'arabic': ''},
+      {'key': 'area', 'label': 'Area', 'arabic': 'منطقة'},
+      {'key': 'street', 'label': 'Street', 'arabic': 'شارع'},
+      {'key': 'building', 'label': 'Building', 'arabic': 'عمارة'},
+      {'key': 'floor', 'label': 'Floor', 'arabic': 'دور'},
+      {'key': 'apartment', 'label': 'Apartment', 'arabic': 'شقة'},
+      {'key': 'landmark', 'label': 'Landmark', 'arabic': 'علامة مميزة'},
+      {'key': 'phoneNumber', 'label': 'Phone', 'arabic': ''},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: addressFields
+          .where((field) => 
+              addressData[field['key']] != null && 
+              addressData[field['key']].toString().isNotEmpty)
+          .map((field) {
+            final value = addressData[field['key']].toString();
+            final label = field['label'] as String;
+            final arabic = field['arabic'] as String;
+            
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: RichText(
+                text: TextSpan(
+                  style: const TextStyle(fontSize: 14, color: Colors.black87),
+                  children: [
+                    TextSpan(
+                      text: '$label: ',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    TextSpan(text: value),
+                    if (arabic.isNotEmpty)
+                      TextSpan(
+                        text: ' ($arabic)',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+    );
+  }
+
+  Widget _buildSimpleAddress(String address) {
+    // Split by common delimiters and display each part on a new line
+    final parts = address.split(RegExp(r'[,\n]')).map((part) => part.trim()).where((part) => part.isNotEmpty).toList();
+    
+    if (parts.length <= 1) {
+      return Text(
+        address,
+        style: const TextStyle(fontSize: 14, height: 1.4),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: parts.map((part) => Padding(
+        padding: const EdgeInsets.only(bottom: 2),
+        child: Text(
+          part,
+          style: const TextStyle(fontSize: 14, height: 1.2),
+        ),
+      )).toList(),
+    );
+  }
+
+  void _copyAddressToClipboard(String address) {
+    String formattedAddress = _getFormattedAddressForCopy(address);
+    Clipboard.setData(ClipboardData(text: formattedAddress));
+    Get.snackbar(
+      'Copied!',
+      'Address copied to clipboard',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+      duration: const Duration(seconds: 2),
+      margin: const EdgeInsets.all(16),
+    );
+  }
+
+  String _getFormattedAddressForCopy(String address) {
+    try {
+      if (address.contains('{') && address.contains('}')) {
+        // Try to parse as JSON and format nicely
+        final addressData = json.decode(address) as Map<String, dynamic>;
+        final parts = <String>[];
+        
+        final fields = [
+          {'key': 'name', 'label': 'Name'},
+          {'key': 'address', 'label': 'Address'},
+          {'key': 'area', 'label': 'Area'},
+          {'key': 'street', 'label': 'Street'},
+          {'key': 'building', 'label': 'Building'},
+          {'key': 'floor', 'label': 'Floor'},
+          {'key': 'apartment', 'label': 'Apartment'},
+          {'key': 'landmark', 'label': 'Landmark'},
+          {'key': 'phoneNumber', 'label': 'Phone'},
+        ];
+
+        for (final field in fields) {
+          final value = addressData[field['key']];
+          if (value != null && value.toString().isNotEmpty) {
+            parts.add('${field['label']}: $value');
+          }
+        }
+        
+        return parts.join('\n');
+      } else {
+        // Return the address as is
+        return address;
+      }
+    } catch (e) {
+      // Fallback to original address
+      return address;
+    }
   }
 
   Widget _buildInfoRow(String label, String value) {

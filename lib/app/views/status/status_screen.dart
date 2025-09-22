@@ -9,6 +9,7 @@ class RestaurantStatusScreen extends StatelessWidget {
     RestaurantStatusController(),
   );
   final TextEditingController _messageController = TextEditingController();
+  final TextEditingController _minVersionController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +46,7 @@ class RestaurantStatusScreen extends StatelessWidget {
               );
             }
             _messageController.text = _controller.restaurant!.closedMessage;
+            _minVersionController.text = _controller.restaurant!.minAppVersion;
 
             if (isMobile) {
               return SingleChildScrollView(
@@ -57,6 +59,10 @@ class RestaurantStatusScreen extends StatelessWidget {
                     _restaurantStatusToggle(),
                     SizedBox(height: 20),
                     _closedMessage(),
+                    SizedBox(height: 20),
+                    _minVersionSection(),
+                    SizedBox(height: 20),
+                    _privacyPolicySection(context),
                     SizedBox(height: 20),
                     _hoursConfigration(),
                   ],
@@ -76,6 +82,10 @@ class RestaurantStatusScreen extends StatelessWidget {
                         _restaurantStatusToggle(),
                         SizedBox(height: 20),
                         _closedMessage(),
+                        SizedBox(height: 20),
+                        _minVersionSection(),
+                        SizedBox(height: 20),
+                        _privacyPolicySection(context),
                       ],
                     ),
                   ),
@@ -298,6 +308,152 @@ class RestaurantStatusScreen extends StatelessWidget {
             ..._buildDayScheduleEditors(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _minVersionSection() {
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Minimum App Version',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _minVersionController,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'e.g. 1.0.0',
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: () => _controller.updateMinAppVersion(_minVersionController.text.trim()),
+                  child: Text('Save'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _privacyPolicySection(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Obx(() {
+          final titleCtrl = TextEditingController(text: _controller.privacyTitle.value);
+          final contentCtrl = TextEditingController(text: _controller.privacyContent.value);
+          final termsTitleCtrl = TextEditingController(text: _controller.termsTitleDoc.value);
+          final termsContentCtrl = TextEditingController(text: _controller.termsContentDoc.value);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Privacy Policy',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  if (_controller.privacyUpdatedAt.value != null)
+                    Text(
+                      'Updated: ' + _controller.privacyUpdatedAt.value!.toDate().toString(),
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                ],
+              ),
+              SizedBox(height: 12),
+              TextField(
+                controller: titleCtrl,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Title',
+                ),
+              ),
+              SizedBox(height: 12),
+              TextField(
+                controller: contentCtrl,
+                maxLines: 6,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Content',
+                ),
+              ),
+              SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    await _controller.savePrivacyPolicy(
+                      title: titleCtrl.text.trim(),
+                      content: contentCtrl.text.trim(),
+                    );
+                  },
+                  child: Text('Save'),
+                ),
+              ),
+              Divider(height: 32),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Terms',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  if (_controller.termsUpdatedAtDoc.value != null)
+                    Text(
+                      'Updated: ' + _controller.termsUpdatedAtDoc.value!.toDate().toString(),
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                ],
+              ),
+              SizedBox(height: 12),
+              TextField(
+                controller: termsTitleCtrl,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Title',
+                ),
+              ),
+              SizedBox(height: 12),
+              TextField(
+                controller: termsContentCtrl,
+                maxLines: 6,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Content',
+                ),
+              ),
+              SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    await _controller.saveTermsDoc(
+                      title: termsTitleCtrl.text.trim(),
+                      content: termsContentCtrl.text.trim(),
+                    );
+                  },
+                  child: Text('Save Terms'),
+                ),
+              ),
+            ],
+          );
+        }),
       ),
     );
   }

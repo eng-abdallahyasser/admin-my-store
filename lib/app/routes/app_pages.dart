@@ -11,6 +11,7 @@ import 'package:admin_my_store/app/views/roles/user_management_screen.dart';
 import 'package:admin_my_store/app/views/status/status_screen.dart';
 
 import 'package:get/get.dart';
+import 'package:admin_my_store/app/bindings/home_binding.dart';
 import 'package:admin_my_store/app/views/home/home_screen.dart';
 import '../bindings/product_binding.dart';
 import '../views/auth/login_screen.dart';
@@ -24,7 +25,11 @@ import 'package:admin_my_store/app/views/feedback/feedback_list_screen.dart';
 
 class AppPages {
   static final routes = [
-    GetPage(name: Routes.home, page: () => HomeScreen()),
+    GetPage(
+      name: Routes.home,
+      page: () => HomeScreen(),
+      binding: HomeBinding(),
+    ),
     GetPage(
       name: Routes.login,
       page: () => LoginScreen(),

@@ -1,5 +1,3 @@
-import 'package:admin_my_store/app/repo/order_repository.dart';
-import 'package:admin_my_store/app/widgets/address_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:admin_my_store/app/models/my_order.dart';
@@ -103,22 +101,6 @@ class OrderCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  FutureBuilder(
-                        future: OrderRepository.getAddress(
-                          order.shippingAddress,
-                        ),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const CircularProgressIndicator();
-                          } else if (snapshot.hasError) {
-                            return Text('Error: ${snapshot.error}');
-                          } else {
-                            final address = snapshot.data;
-                            return AddressCard(address: address!);
-                          }
-                        },
-                      ),
                 ],
               ),
               if (!isMobile) const SizedBox(height: 16),

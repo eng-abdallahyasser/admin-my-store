@@ -1,5 +1,7 @@
 import 'package:admin_my_store/app/controllers/auth_controller.dart';
+import 'package:admin_my_store/app/controllers/order_controller.dart';
 import 'package:admin_my_store/app/widgets/role_guarded_widget.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../routes/app_routes.dart';
@@ -11,6 +13,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The OrderController is now initialized via HomeBinding, so we can safely find it.
+    final orderController = Get.find<OrderController>();
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
     final crossAxisCount =
@@ -45,6 +49,40 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Web-only banner prompting to enable sound alerts
+            if (kIsWeb)
+              Obx(() {
+                final ready = orderController.soundReady.value;
+                if (ready) return const SizedBox.shrink();
+                return Card(
+                  color: Colors.amber.shade50,
+                  elevation: 0,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(color: Colors.amber.shade200),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.volume_up, color: Colors.amber),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Text(
+                            'Enable sound alerts to hear notifications for new orders.',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => orderController.initializeSoundIfNeeded(),
+                          child: const Text('Enable sound alerts'),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
             if (!isMobile) ...[
               const Padding(
                 padding: EdgeInsets.only(bottom: 20),
@@ -142,7 +180,7 @@ class HomeScreen extends StatelessWidget {
                   
                   _buildDashboardTile(
                     context,
-                    "Status",
+                    "Manage Restaurant",
                     Icons.restaurant,
                     Colors.brown,
                     iconSize,

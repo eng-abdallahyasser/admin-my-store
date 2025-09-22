@@ -5,6 +5,7 @@ class RestaurantStatus {
   String closedMessage;
   Map<String, dynamic> openingHours;
   bool autoMode;
+  String minAppVersion;
 
   RestaurantStatus({
     required this.id,
@@ -13,6 +14,7 @@ class RestaurantStatus {
     required this.closedMessage,
     required this.openingHours,
     required this.autoMode,
+    required this.minAppVersion,
   });
 
   factory RestaurantStatus.fromMap(String id, Map<String, dynamic> data) {
@@ -34,6 +36,7 @@ class RestaurantStatus {
       closedMessage: data['closedMessage'] ?? 'Restaurant is closed',
       openingHours: Map<String, dynamic>.from(data['openingHours'] ?? defaultHours),
       autoMode: data['autoMode'] ?? true,
+      minAppVersion: data['minAppVersion'] ?? '1.0.0',
     );
   }
 
@@ -44,6 +47,7 @@ class RestaurantStatus {
       'closedMessage': closedMessage,
       'openingHours': openingHours,
       'autoMode': autoMode,
+      'minAppVersion': minAppVersion,
     };
   }
 }
