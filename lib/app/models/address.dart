@@ -208,6 +208,22 @@ class Address {
     return parts.join(', ');
   }
 
+  /// Returns only the key address fields as a single multiline string.
+  /// Fields included: name, area, street, building, floor, apartment, landmark, phone.
+  /// This is suitable for copying to the clipboard.
+  String getCopyAddressString() {
+    final parts = <String>[];
+    if (name.isNotEmpty) parts.add('Name: $name');
+    if (area.isNotEmpty) parts.add('Area: $area');
+    if (street.isNotEmpty) parts.add('Street: $street');
+    if (building.isNotEmpty) parts.add('Building: $building');
+    if (floor.isNotEmpty) parts.add('Floor: $floor');
+    if (apartment.isNotEmpty) parts.add('Apartment: $apartment');
+    if (landmark.isNotEmpty) parts.add('Landmark: $landmark');
+    if (phoneNumber.isNotEmpty) parts.add('Phone: $phoneNumber');
+    return parts.join('\n');
+  }
+
   @override
   String toString() {
     return 'Address(userId: $userId, addressId: $addressId, name: $name, latitude: $latitude, longitude: $longitude, address: $address, phoneNumber: $phoneNumber, area: $area, street: $street, building: $building, floor: $floor, apartment: $apartment, landmark: $landmark)';

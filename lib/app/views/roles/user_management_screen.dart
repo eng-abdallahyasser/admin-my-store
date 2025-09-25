@@ -59,12 +59,26 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     itemCount: _authController.users.length,
                     itemBuilder: (context, index) {
                       final user = _authController.users[index];
-                      // Skip the currently logged-in user
+                      // Debug print to check user data
+                      print('User ${index}: uid=${user.uid}, email="${user.email}", displayName="${user.displayName}"');
+                      
+                      // Check if this is the currently logged-in user
                       final currentUid = _authController.user.value?.uid;
-                      if (currentUid != null && user.uid == currentUid) {
-                        return SizedBox.shrink();
+                      final isCurrentUser = currentUid != null && user.uid == currentUid;
+                      print('Current logged-in UID: $currentUid');
+                      print('Comparing: ${user.uid} == $currentUid ? $isCurrentUser');
+                      
+                      if (isCurrentUser) {
+                        print('Showing current user card (with indicator): ${user.uid}');
+                      } else {
+                        print('Showing card for user: ${user.uid}');
                       }
-                      return _UserRoleCard(user: user, authController: _authController);
+                      
+                      return _UserRoleCard(
+                        user: user, 
+                        authController: _authController,
+                        isCurrentUser: isCurrentUser,
+                      );
                     },
                   ),
                 ),
@@ -88,8 +102,13 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 class _UserRoleCard extends StatefulWidget {
   final AppUser user;
   final AuthController authController;
+  final bool isCurrentUser;
 
-  const _UserRoleCard({required this.user, required this.authController});
+  const _UserRoleCard({
+    required this.user, 
+    required this.authController,
+    this.isCurrentUser = false,
+  });
 
   @override
   __UserRoleCardState createState() => __UserRoleCardState();
@@ -108,11 +127,30 @@ class __UserRoleCardState extends State<_UserRoleCard> {
   Widget build(BuildContext context) {
     return Card(
       margin: EdgeInsets.only(bottom: 12),
+      color: widget.isCurrentUser ? Colors.blue.shade50 : null,
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Current user indicator
+            if (widget.isCurrentUser)
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'You (Current User)',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            if (widget.isCurrentUser) SizedBox(height: 8),
             // User info
             Row(
               children: [
@@ -135,8 +173,18 @@ class __UserRoleCardState extends State<_UserRoleCard> {
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       Text(
-                        widget.user.email,
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                        widget.user.email.isNotEmpty 
+                          ? widget.user.email 
+                          : 'No email available',
+                        style: TextStyle(
+                          fontSize: 12, 
+                          color: widget.user.email.isNotEmpty 
+                            ? Colors.grey 
+                            : Colors.red,
+                          fontStyle: widget.user.email.isNotEmpty 
+                            ? FontStyle.normal 
+                            : FontStyle.italic,
+                        ),
                       ),
                     ],
                   ),
@@ -165,13 +213,27 @@ class __UserRoleCardState extends State<_UserRoleCard> {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    'Selected: ${_selectedRoles.join(', ')}',
-                    style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Selected: ${_selectedRoles.join(', ')}',
+                        style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                      ),
+                      if (widget.isCurrentUser)
+                        Text(
+                          'Note: You cannot modify your own roles',
+                          style: TextStyle(
+                            fontSize: 11, 
+                            color: Colors.orange.shade700,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: _saveRoles,
+                  onPressed: widget.isCurrentUser ? null : _saveRoles,
                   child: Text('Save Changes'),
                 ),
               ],

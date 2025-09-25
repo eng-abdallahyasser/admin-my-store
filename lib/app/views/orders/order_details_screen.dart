@@ -186,7 +186,7 @@ class OrderDetailsScreen extends StatelessWidget {
           children: [
             const Text('Update Status:', style: TextStyle(fontSize: 16)),
             DropdownButtonFormField<String>(
-              value: order.status,
+              initialValue: order.status,
               items:
                   _controller.statusList
                       .map(
@@ -295,7 +295,7 @@ class OrderDetailsScreen extends StatelessWidget {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             IconButton(
-              onPressed: () => _copyAddressToClipboard(order.shippingAddress),
+              onPressed: () => _copyAddressToClipboard(Address.fromCompactAddress(order.shippingAddress).getCopyAddressString()),
               icon: const Icon(Icons.copy, size: 20),
               tooltip: 'Copy Address',
               style: IconButton.styleFrom(
@@ -314,104 +314,56 @@ class OrderDetailsScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.grey.shade300),
           ),
-          child: _buildAddressContent(order.shippingAddress),
+          child: _buildAddressContent(Address.fromCompactAddress(order.shippingAddress) ),
         ),
         
       ],
     );
   }
 
-  Widget _buildAddressContent(String address) {
-    // Try to parse if it's a JSON string (new format with detailed fields)
-    try {
-      if (address.contains('{') && address.contains('}')) {
-        // Try to parse as JSON and extract address fields
-        final addressData = json.decode(address) as Map<String, dynamic>;
-        return _buildStructuredAddress(addressData);
-      } else {
-        // Simple address string - display with better formatting
-        return _buildSimpleAddress(address);
-      }
-    } catch (e) {
-      // Fallback to simple text display
-      return _buildSimpleAddress(address);
-    }
-  }
-
-  Widget _buildStructuredAddress(Map<String, dynamic> addressData) {
-    final addressFields = [
-      {'key': 'name', 'label': 'Name', 'arabic': ''},
-      {'key': 'address', 'label': 'Address', 'arabic': ''},
-      {'key': 'area', 'label': 'Area', 'arabic': 'منطقة'},
-      {'key': 'street', 'label': 'Street', 'arabic': 'شارع'},
-      {'key': 'building', 'label': 'Building', 'arabic': 'عمارة'},
-      {'key': 'floor', 'label': 'Floor', 'arabic': 'دور'},
-      {'key': 'apartment', 'label': 'Apartment', 'arabic': 'شقة'},
-      {'key': 'landmark', 'label': 'Landmark', 'arabic': 'علامة مميزة'},
-      {'key': 'phoneNumber', 'label': 'Phone', 'arabic': ''},
+  Widget _buildAddressContent(Address address) {
+    final fields = [
+      {'label': 'Name', 'value': address.name},
+      {'label': 'Area', 'value': address.area},
+      {'label': 'Street', 'value': address.street},
+      {'label': 'Building', 'value': address.building},
+      {'label': 'Floor', 'value': address.floor},
+      {'label': 'Apartment', 'value': address.apartment},
+      {'label': 'Landmark', 'value': address.landmark},
+      {'label': 'Phone', 'value': address.phoneNumber},
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: addressFields
-          .where((field) => 
-              addressData[field['key']] != null && 
-              addressData[field['key']].toString().isNotEmpty)
-          .map((field) {
-            final value = addressData[field['key']].toString();
-            final label = field['label'] as String;
-            final arabic = field['arabic'] as String;
-            
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: RichText(
-                text: TextSpan(
-                  style: const TextStyle(fontSize: 14, color: Colors.black87),
+      children: fields
+          .where((f) => (f['value'] as String).isNotEmpty)
+          .map((f) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextSpan(
-                      text: '$label: ',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    TextSpan(text: value),
-                    if (arabic.isNotEmpty)
-                      TextSpan(
-                        text: ' ($arabic)',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 12,
-                        ),
+                    SizedBox(
+                      width: 90,
+                      child: Text(
+                        '${f['label']}:',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: SelectableText(
+                        f['value'] as String,
+                        style: const TextStyle(color: Colors.black87),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            );
-          }).toList(),
+              ))
+          .toList(),
     );
   }
 
-  Widget _buildSimpleAddress(String address) {
-    // Split by common delimiters and display each part on a new line
-    final parts = address.split(RegExp(r'[,\n]')).map((part) => part.trim()).where((part) => part.isNotEmpty).toList();
-    
-    if (parts.length <= 1) {
-      return Text(
-        address,
-        style: const TextStyle(fontSize: 14, height: 1.4),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: parts.map((part) => Padding(
-        padding: const EdgeInsets.only(bottom: 2),
-        child: Text(
-          part,
-          style: const TextStyle(fontSize: 14, height: 1.2),
-        ),
-      )).toList(),
-    );
-  }
-
+ 
   void _copyAddressToClipboard(String address) {
     String formattedAddress = _getFormattedAddressForCopy(address);
     Clipboard.setData(ClipboardData(text: formattedAddress));
@@ -421,7 +373,7 @@ class OrderDetailsScreen extends StatelessWidget {
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.green,
       colorText: Colors.white,
-      duration: const Duration(seconds: 2),
+      duration: const Duration(milliseconds: 500),
       margin: const EdgeInsets.all(16),
     );
   }
@@ -429,36 +381,30 @@ class OrderDetailsScreen extends StatelessWidget {
   String _getFormattedAddressForCopy(String address) {
     try {
       if (address.contains('{') && address.contains('}')) {
-        // Try to parse as JSON and format nicely
+        // JSON-based address; format the key fields only
         final addressData = json.decode(address) as Map<String, dynamic>;
         final parts = <String>[];
-        
-        final fields = [
-          {'key': 'name', 'label': 'Name'},
-          {'key': 'address', 'label': 'Address'},
-          {'key': 'area', 'label': 'Area'},
-          {'key': 'street', 'label': 'Street'},
-          {'key': 'building', 'label': 'Building'},
-          {'key': 'floor', 'label': 'Floor'},
-          {'key': 'apartment', 'label': 'Apartment'},
-          {'key': 'landmark', 'label': 'Landmark'},
-          {'key': 'phoneNumber', 'label': 'Phone'},
-        ];
-
-        for (final field in fields) {
-          final value = addressData[field['key']];
+        void addPart(String label, dynamic value) {
           if (value != null && value.toString().isNotEmpty) {
-            parts.add('${field['label']}: $value');
+            parts.add('$label: ${value.toString()}');
           }
         }
-        
+        addPart('Name', addressData['name']);
+        addPart('Area', addressData['area']);
+        addPart('Street', addressData['street']);
+        addPart('Building', addressData['building']);
+        addPart('Floor', addressData['floor']);
+        addPart('Apartment', addressData['apartment']);
+        addPart('Landmark', addressData['landmark']);
+        addPart('Phone', addressData['phoneNumber']);
         return parts.join('\n');
-      } else {
-        // Return the address as is
-        return address;
       }
+
+      // Fallback to compact string format
+      final parsed = Address.fromCompactAddress(address);
+      return parsed.getCopyAddressString();
     } catch (e) {
-      // Fallback to original address
+      // Fallback to original address string
       return address;
     }
   }

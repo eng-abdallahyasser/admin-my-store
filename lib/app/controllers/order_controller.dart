@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:developer';
-import 'dart:html' as html;
 
 import 'package:admin_my_store/app/models/my_order.dart';
 import 'package:admin_my_store/app/repo/order_repository.dart';
@@ -22,7 +21,6 @@ class OrderController extends GetxController {
   late StreamSubscription<QuerySnapshot> _ordersSubscription;
   bool _initialized = false; // avoid notifying on initial snapshot
   AudioPlayer? _alertPlayer; // used to play looping alert sound
-  html.AudioElement? _webAudioElement; // Fallback for web
   bool _alerting = false;
   // Exposed flag so UI can prompt user to enable sound on web
   final RxBool soundReady = false.obs;
@@ -53,8 +51,6 @@ class OrderController extends GetxController {
   void onClose() {
     _ordersSubscription.cancel();
     _alertPlayer?.dispose();
-    _webAudioElement?.pause();
-    _webAudioElement = null;
     super.onClose();
   }
 
@@ -85,11 +81,7 @@ class OrderController extends GetxController {
     try {
       // Lower volume back to 0.0 but keep looping to maintain autoplay allowance
       log('Acknowledging new orders, setting volume to 0.0');
-      if (kIsWeb && _webAudioElement != null) {
-        _webAudioElement!.volume = 0.0;
-      } else {
-        await _alertPlayer?.setVolume(0.0);
-      }
+      await _alertPlayer?.setVolume(0.0);
     } catch (e, s) {
       log('Error setting volume to 0 in acknowledgeNewOrders: $e', stackTrace: s);
     }
@@ -100,20 +92,11 @@ class OrderController extends GetxController {
   Future<void> _prewarmAlertLoop() async {
     try {
       log('Prewarming alert loop...');
-      if (kIsWeb) {
-        // Use HTML5 Audio directly on web to avoid platform channel issues
-        _webAudioElement = html.AudioElement('assets/assets/sounds/new_order.mp3')
-          ..loop = true
-          ..volume = 0.0
-          ..load();
-        await _webAudioElement!.play();
-        log('Web audio prewarm successful.');
-      } else {
-        // Use audioplayers on mobile/desktop
-        await _alertPlayer?.setVolume(0.0);
-        await _alertPlayer?.play(AssetSource('sounds/new_order.mp3'));
-        log('Audioplayers prewarm successful.');
-      }
+      _alertPlayer ??= AudioPlayer();
+      await _alertPlayer!.setReleaseMode(ReleaseMode.loop);
+      await _alertPlayer!.setVolume(0.0);
+      await _alertPlayer!.play(AssetSource('sounds/new_order.mp3'));
+      log('Audio prewarm successful.');
     } catch (e, s) {
       log('Error prewarming alert loop: $e', stackTrace: s);
       // Fallback will be handled in _raiseAlertVolume
@@ -136,32 +119,13 @@ class OrderController extends GetxController {
   Future<void> _raiseAlertVolume() async {
     try {
       log('New order received, raising alert volume to 1.0...');
-      if (kIsWeb && _webAudioElement != null) {
-        // Use HTML5 Audio on web
-        _webAudioElement!.volume = 1.0;
-        if (_webAudioElement!.paused) {
-          await _webAudioElement!.play();
-        }
-        log('Web audio volume raised successfully.');
-      } else {
-        // Use audioplayers on mobile/desktop
-        await _alertPlayer?.setVolume(1.0);
-        log('Audioplayers volume raised successfully.');
-      }
+      await _alertPlayer?.setVolume(1.0);
+      log('Audio volume raised successfully.');
     } catch (e, s) {
       log('Error raising alert volume: $e', stackTrace: s);
       // Fallback attempts
       try {
-        if (kIsWeb) {
-          // Emergency web fallback - create new audio element
-          final emergency = html.AudioElement('assets/assets/sounds/new_order.mp3')
-            ..loop = true
-            ..volume = 1.0;
-          await emergency.play();
-          log('Emergency web audio fallback successful.');
-        } else {
-          await FlutterRingtonePlayer.playNotification();
-        }
+        await FlutterRingtonePlayer.playNotification();
       } catch (e2, s2) {
         log('Could not play fallback notification sound: $e2', stackTrace: s2);
         try {
@@ -222,13 +186,6 @@ class OrderController extends GetxController {
     }
   }
 
-  // @override
-  // void onReady() {
-  //   final orderId = Get.arguments as String;
-  //   loadOrderDetails(orderId);
-  //   super.onReady();
-  // }
-
   Future<MyOrder?> loadOrderDetails(String orderId) async {
     try {
       isLoading(true);
@@ -243,23 +200,6 @@ class OrderController extends GetxController {
       isLoading(false);
     }
   }
-
-  // Future<void> updateOrderStatus(String orderId, String newStatus) async {
-  //   try {
-  //     isLoading(true);
-  //     await _repository.updateOrderStatus(orderId, newStatus);
-  //     final index = orders.indexWhere((o) => o.id == orderId);
-  //     if (index != -1) {
-  //       orders[index] = orders[index].copyWith(status: newStatus);
-  //     }
-  //     Get.snackbar('Success', 'Order status updated');
-  //   } catch (e) {
-  //     log(e.toString());
-  //     Get.snackbar('Error', 'Failed to update status');
-  //   } finally {
-  //     isLoading(false);
-  //   }
-  // }
 
   void toggleStatusFilter(String status) {
     if (selectedStatus.contains(status)) {

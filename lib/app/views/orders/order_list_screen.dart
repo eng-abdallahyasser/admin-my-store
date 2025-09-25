@@ -5,13 +5,14 @@ import 'package:admin_my_store/app/controllers/order_controller.dart';
 
 class OrderListScreen extends StatelessWidget {
   final OrderController _controller = Get.find();
+  final RxList<String> _leftFilters = <String>[].obs;
+  final RxList<String> _rightFilters = <String>[].obs;
 
   OrderListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
-    final isTablet = MediaQuery.of(context).size.width < 900;
 
     return Scaffold(
       appBar: AppBar(
@@ -24,52 +25,12 @@ class OrderListScreen extends StatelessWidget {
             onPressed: _showSearchDialog,
             tooltip: 'Search Orders',
           ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(58),
-          child: Obx(
-            () => Container(
-              width: double.infinity,
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    ..._controller.statusList.map((status) {
-                      final selected = _controller.selectedStatus.contains(status);
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: FilterChip(
-                          label: Text(status),
-                          selected: selected,
-                          onSelected: (_) => _controller.toggleStatusFilter(status),
-                          selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                          checkmarkColor: Theme.of(context).colorScheme.primary,
-                        ),
-                      );
-                    }).toList(),
-                    if (_controller.selectedStatus.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 4.0),
-                        child: TextButton.icon(
-                          onPressed: () {
-                            // Clear all selected filters
-                            final toClear = List<String>.from(_controller.selectedStatus);
-                            for (final s in toClear) {
-                              _controller.toggleStatusFilter(s);
-                            }
-                          },
-                          icon: const Icon(Icons.clear_all, size: 18),
-                          label: const Text('Clear'),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _controller.loadOrders,
+            tooltip: 'Refresh Orders',
           ),
-        ),
+        ],
       ),
       body: Obx(() {
         if (_controller.isLoading.value) {
@@ -99,9 +60,7 @@ class OrderListScreen extends StatelessWidget {
           onRefresh: _controller.loadOrders,
           child: isMobile
               ? _buildMobileList()
-              : isTablet
-                  ? _buildTabletList()
-                  : _buildDesktopGrid(),
+              : _buildTwoHalvesLayout(),
         );
       }),
     );
@@ -120,78 +79,155 @@ class OrderListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTabletList() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _controller.orders.length,
-      itemBuilder: (context, index) {
-        return OrderCard(
-          order: _controller.orders[index],
-          isMobile: false,
-        );
-      },
-    );
-  }
-
-  Widget _buildDesktopGrid() {
+  Widget _buildTwoHalvesLayout() {
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: GridView.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 1.6,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-        ),
-        itemCount: _controller.orders.length,
-        itemBuilder: (context, index) {
-          return OrderCard(
-            order: _controller.orders[index],
-            isMobile: false,
-          );
-        },
-      ),
-    );
-  }
-
-  void _showFilterDialog() {
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Filter Orders'),
-        content: Obx(
-          () => SizedBox(
-            width: double.minPositive,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ..._controller.statusList.map(
-                  (status) => CheckboxListTile(
-                    title: Text(status),
-                    value: _controller.selectedStatus.contains(status),
-                    onChanged: (value) =>
-                        _controller.toggleStatusFilter(status),
-                  ),
-                ).toList(),
-              ],
+      child: Row(
+        children: [
+          // Left Half
+          Expanded(
+            child: _buildHalfSection(
+              title: 'Active Orders',
+              filters: _leftFilters,
+              orders: _getFilteredOrders(_leftFilters),
+              onFilterChanged: (status) => _toggleLeftFilter(status),
             ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: Get.back,
-            child: const Text('Reset'),
-          ),
-          TextButton(
-            onPressed: () {
-              _controller.applyFilters();
-              Get.back();
-            },
-            child: const Text('Apply'),
+          const SizedBox(width: 16),
+          // Right Half
+          Expanded(
+            child: _buildHalfSection(
+              title: 'Completed Orders',
+              filters: _rightFilters,
+              orders: _getFilteredOrders(_rightFilters),
+              onFilterChanged: (status) => _toggleRightFilter(status),
+            ),
           ),
         ],
       ),
     );
   }
+
+  Widget _buildHalfSection({
+    required String title,
+    required RxList<String> filters,
+    required List<dynamic> orders,
+    required Function(String) onFilterChanged,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with title and filters
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Filter chips
+                Obx(() => Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _controller.statusList.map((status) {
+                    final selected = filters.contains(status);
+                    return FilterChip(
+                      label: Text(status),
+                      selected: selected,
+                      onSelected: (_) => onFilterChanged(status),
+                      selectedColor: Theme.of(Get.context!).colorScheme.primary.withOpacity(0.15),
+                      checkmarkColor: Theme.of(Get.context!).colorScheme.primary,
+                    );
+                  }).toList(),
+                )),
+                if (filters.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: TextButton.icon(
+                      onPressed: () => filters.clear(),
+                      icon: const Icon(Icons.clear_all, size: 16),
+                      label: const Text('Clear All'),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          // Orders list
+          Expanded(
+            child: orders.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.receipt_long, size: 48, color: Colors.grey.shade400),
+                        const SizedBox(height: 8),
+                        Text(
+                          'No orders found',
+                          style: TextStyle(color: Colors.grey.shade600),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: orders.length,
+                    itemBuilder: (context, index) {
+                      return OrderCard(
+                        order: orders[index],
+                        isMobile: false,
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<dynamic> _getFilteredOrders(RxList<String> filters) {
+    if (filters.isEmpty) {
+      return _controller.orders;
+    }
+    return _controller.orders.where((order) => filters.contains(order.status)).toList();
+  }
+
+  void _toggleLeftFilter(String status) {
+    if (_leftFilters.contains(status)) {
+      _leftFilters.remove(status);
+    } else {
+      _leftFilters.add(status);
+    }
+  }
+
+  void _toggleRightFilter(String status) {
+    if (_rightFilters.contains(status)) {
+      _rightFilters.remove(status);
+    } else {
+      _rightFilters.add(status);
+    }
+  }
+
 
   void _showSearchDialog() {
     Get.dialog(

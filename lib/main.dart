@@ -2,14 +2,16 @@ import 'dart:developer';
 
 import 'package:admin_my_store/app/bindings/auth_binding.dart';
 import 'package:admin_my_store/app/repo/auth_repository.dart';
+import 'package:admin_my_store/app/repo/notification_repository.dart';
 import 'package:admin_my_store/app/routes/app_pages.dart';
 import 'package:admin_my_store/app/routes/app_routes.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:admin_my_store/firebase_options.dart';
 import 'package:get/get.dart';
-
 
 
 void main() async {
@@ -22,6 +24,9 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     log('main: Firebase initialized successfully.');
+
+    
+  
 
     // Initialize all core services AFTER Firebase is ready
     await initServices();
@@ -39,6 +44,8 @@ Future<void> initServices() async {
   // Repositories and other app-wide services
   Get.put<AuthRepository>(AuthRepository(), permanent: true);
   log('initServices: AuthRepository initialized.');
+  Get.put<NotificationRepository>(NotificationRepository(), permanent: true);
+  log('initServices: NotificationRepository initialized.');
   // Add other permanent services here in the future
 }
 

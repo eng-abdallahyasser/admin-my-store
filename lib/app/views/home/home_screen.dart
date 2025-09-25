@@ -197,6 +197,15 @@ class HomeScreen extends StatelessWidget {
                       titleSize,
                       () {}, // Add your route here
                     ),
+                  _buildDashboardTile(
+                    context,
+                    "Notifications",
+                    Icons.notifications,
+                    Colors.blueGrey,
+                    iconSize,
+                    titleSize,
+                    () => Get.toNamed(Routes.notifications),
+                  ),
                   
                    
                 ],

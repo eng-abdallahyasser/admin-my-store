@@ -8,12 +8,11 @@ import 'package:admin_my_store/app/routes/app_routes.dart';
 
 class AuthController extends GetxController {
   final AuthRepository _authRepository = Get.find<AuthRepository>();
-  final Rxn<User> user = Rxn<User>();
+  final Rxn<User?> user = Rxn<User?>(null);
   final Rx<AppUser?> appUser = Rx<AppUser?>(null);
   final RxList<AppUser> users = RxList<AppUser>();
   AppUser? get currentUser => appUser.value;
 
-  final RxString error = ''.obs;
   final RxBool isLoading = false.obs;
   final RxBool obscurePassword = true.obs;
   final TextEditingController emailController = TextEditingController();
@@ -182,7 +181,7 @@ class AuthController extends GetxController {
       ),
     );
   }
-  
+
   Future<void> initRoleData() async {
     isLoading.value = true;
     try {

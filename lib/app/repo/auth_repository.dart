@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:admin_my_store/app/models/app_user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -23,10 +25,13 @@ class AuthRepository {
         email: email,
         password: password,
       );
+      // log(credential.toString(), name: 'AuthRepository');
 
       if (credential.user != null) {
         return credential.user;
       }
+
+      log( credential.user!.getIdToken(true).toString());
       return credential.user;
     } on FirebaseAuthException catch (e) {
       throw Exception(e.message ?? 'Authentication failed');
@@ -84,9 +89,37 @@ class AuthRepository {
   Future<List<AppUser>> fetchAllUsers() async {
     try {
       final querySnapshot = await _firestore.collection('admins').get();
-      return querySnapshot.docs
-          .map((doc) => AppUser.fromMap(doc.id, doc.data()))
-          .toList();
+      List<AppUser> users = [];
+
+      for (var doc in querySnapshot.docs) {
+        // Skip the admin configuration document
+        if (doc.id == 'admins') {
+          continue;
+        }
+
+        Map<String, dynamic> data = doc.data();
+
+        // If email is not in the document, try to find it in admin emails
+        // This is a fallback - ideally email should be stored in each user doc
+        if (data['email'] == null || data['email'].toString().isEmpty) {
+          // For now, we'll use a placeholder or try to get from document ID if it's an email
+          if (doc.id.contains('@')) {
+            data['email'] = doc.id;
+          } else {
+            data['email'] = 'email-not-found@example.com';
+          }
+        }
+
+        // If displayName is empty, use email as fallback
+        if (data['displayName'] == null ||
+            data['displayName'].toString().isEmpty) {
+          data['displayName'] = data['email'].toString().split('@')[0];
+        }
+
+        users.add(AppUser.fromMap(doc.id, data));
+      }
+
+      return users;
     } catch (e) {
       throw Exception('Failed to fetch users: $e');
     }
@@ -104,7 +137,7 @@ class AuthRepository {
       }
     } catch (e) {
       throw Exception('Failed to fetch user role data: $e');
-    } 
+    }
   }
 
   Future fetchSignInMethodsForEmail(String email) async {

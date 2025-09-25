@@ -17,117 +17,119 @@ class OrderCard extends StatelessWidget {
 
     return Card(
       elevation: 2,
-      margin: EdgeInsets.zero,
+      margin: EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () => Get.toNamed(Routes.orderDetails, arguments: order.id),
         child: Padding(
           padding: EdgeInsets.all(isMobile ? 12 : 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Text(
-                      'Order #${order.orderNumber}',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Chip(
-                    backgroundColor: _getStatusColor(),
-                    label: Text(
-                      order.status.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                dateFormat.format(order.createdAt),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.grey.shade600,
-                ),
-              ),
-              const Divider(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${order.items.length} ${order.items.length == 1 ? 'item' : 'items'}',
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        order.customerEmail,
-                        style: theme.textTheme.bodySmall,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        order.customerName,
-                        style: theme.textTheme.bodySmall,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        order.customerPhone,
-                        style: theme.textTheme.bodySmall,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const Divider(height: 24),
-                      
-                      Text(
-                        '\$${_calculateTotal().toStringAsFixed(2)}',
+          child: IntrinsicHeight(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        'Order #${order.orderNumber}',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "order.paymentMethod",
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              if (!isMobile) const SizedBox(height: 16),
-              if (!isMobile)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    OutlinedButton(
-                      onPressed:
-                          () => Get.toNamed(
-                            Routes.orderDetails,
-                            arguments: order.id,
-                          ),
-                      child: const Text('View Details'),
                     ),
-                    const SizedBox(width: 12),
-                    if (order.status.toLowerCase() != 'completed')
-                      ElevatedButton(
-                        onPressed: () => _updateOrderStatus(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green.shade600,
+                    Chip(
+                      backgroundColor: _getStatusColor(),
+                      label: Text(
+                        order.status.toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
                         ),
-                        child: const Text('Mark Completed'),
                       ),
+                    ),
                   ],
                 ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  dateFormat.format(order.createdAt),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const Divider(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${order.items.length} ${order.items.length == 1 ? 'item' : 'items'}',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          order.customerEmail,
+                          style: theme.textTheme.bodySmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          order.customerName,
+                          style: theme.textTheme.bodySmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          order.customerPhone,
+                          style: theme.textTheme.bodySmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        
+                        Text(
+                          '\$${_calculateTotal().toStringAsFixed(2)}',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          order.paymentStatus,
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                if (!isMobile) const SizedBox(height: 16),
+                if (!isMobile)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton(
+                        onPressed: () => Get.toNamed(
+                          Routes.orderDetails,
+                          arguments: order.id,
+                        ),
+                        child: const Text('View Details'),
+                      ),
+                      const SizedBox(width: 12),
+                      if (order.status.toLowerCase() != 'completed')
+                        ElevatedButton(
+                          onPressed: () => _updateOrderStatus(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green.shade600,
+                          ),
+                          child: const Text('Mark Completed'),
+                        ),
+                    ],
+                  ),
+              ],
+            ),
           ),
         ),
       ),
