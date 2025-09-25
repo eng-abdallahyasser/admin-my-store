@@ -261,12 +261,12 @@ Future<void> saveTermsDoc({required String title, required String content}) asyn
       if (_restaurant.value!.isOpen) {
         // Currently open, next change is at closing time
         if (currentTimeInMinutes < closeTimeInMinutes || closeTimeInMinutes < openTimeInMinutes) {
-          return 'Today at ${closeTimeStr}';
+          return 'Today at $closeTimeStr';
         }
       } else {
         // Currently closed, next change is at opening time
         if (currentTimeInMinutes < openTimeInMinutes) {
-          return 'Today at ${openTimeStr}';
+          return 'Today at $openTimeStr';
         }
       }
     }

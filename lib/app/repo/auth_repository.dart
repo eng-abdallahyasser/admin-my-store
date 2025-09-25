@@ -51,7 +51,7 @@ class AuthRepository {
       }
       return false;
     } catch (e) {
-      print('Error checking admin status: $e');
+      log('Error checking admin status: $e');
       return false;
     }
   }

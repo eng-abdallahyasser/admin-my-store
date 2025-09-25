@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:admin_my_store/app/models/variant.dart';
 
 class CartItem {
@@ -46,7 +48,7 @@ class CartItem {
       }
       return [];
     } catch (e) {
-      print('Error parsing variants: $e');
+      log('Error parsing variants: $e');
       return [];
     }
   }

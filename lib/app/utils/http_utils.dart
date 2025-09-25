@@ -67,7 +67,7 @@ class HttpUtils {
     // List of CORS proxies to try
     final corsProxies = [
       'https://api.allorigins.win/raw?url=',  // Doesn't require activation
-      'https://corsproxy.io/?' + Uri.encodeQueryComponent(''),  // Doesn't require activation
+      'https://corsproxy.io/?${Uri.encodeQueryComponent('')}',  // Doesn't require activation
     ];
     
     http.Response? lastResponse;

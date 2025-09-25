@@ -6,10 +6,8 @@ import 'package:admin_my_store/app/repo/notification_repository.dart';
 import 'package:admin_my_store/app/routes/app_pages.dart';
 import 'package:admin_my_store/app/routes/app_routes.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:admin_my_store/firebase_options.dart';
 import 'package:get/get.dart';
 

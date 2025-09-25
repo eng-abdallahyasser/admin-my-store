@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:admin_my_store/app/controllers/auth_controller.dart';
 import 'package:admin_my_store/app/models/app_user.dart';
 import 'package:admin_my_store/app/repo/app_permissions.dart';
@@ -60,18 +62,18 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     itemBuilder: (context, index) {
                       final user = _authController.users[index];
                       // Debug print to check user data
-                      print('User ${index}: uid=${user.uid}, email="${user.email}", displayName="${user.displayName}"');
+                      log('User $index: uid=${user.uid}, email="${user.email}", displayName="${user.displayName}"');
                       
                       // Check if this is the currently logged-in user
                       final currentUid = _authController.user.value?.uid;
                       final isCurrentUser = currentUid != null && user.uid == currentUid;
-                      print('Current logged-in UID: $currentUid');
-                      print('Comparing: ${user.uid} == $currentUid ? $isCurrentUser');
+                      log('Current logged-in UID: $currentUid');
+                      log('Comparing: ${user.uid} == $currentUid ? $isCurrentUser');
                       
                       if (isCurrentUser) {
-                        print('Showing current user card (with indicator): ${user.uid}');
+                        log('Showing current user card (with indicator): ${user.uid}');
                       } else {
-                        print('Showing card for user: ${user.uid}');
+                        log('Showing card for user: ${user.uid}');
                       }
                       
                       return _UserRoleCard(

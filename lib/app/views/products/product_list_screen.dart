@@ -32,9 +32,9 @@ class ProductListScreen extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
         onPressed: () => Get.toNamed(Routes.addProduct),
         tooltip: 'Add New Product',
+        child: const Icon(Icons.add),
       ),
       body: Obx(() {
         if (productController.isLoading.value) {

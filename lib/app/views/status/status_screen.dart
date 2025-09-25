@@ -170,7 +170,7 @@ class RestaurantStatusScreen extends StatelessWidget {
                   onChanged: (value) {
                     _controller.toggleAutoMode(value);
                   },
-                  activeColor: Colors.blue,
+                  activeThumbColor: Colors.blue,
                 ),
               ],
             ),
@@ -226,7 +226,7 @@ class RestaurantStatusScreen extends StatelessWidget {
                               _controller.restaurant!.closedMessage,
                             );
                           },
-                  activeColor: Colors.green,
+                  activeThumbColor: Colors.green,
                 ),
               ],
             ),
@@ -370,7 +370,7 @@ class RestaurantStatusScreen extends StatelessWidget {
                   ),
                   if (_controller.privacyUpdatedAt.value != null)
                     Text(
-                      'Updated: ' + _controller.privacyUpdatedAt.value!.toDate().toString(),
+                      'Updated: ${_controller.privacyUpdatedAt.value!.toDate()}',
                       style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                 ],
@@ -416,7 +416,7 @@ class RestaurantStatusScreen extends StatelessWidget {
                   ),
                   if (_controller.termsUpdatedAtDoc.value != null)
                     Text(
-                      'Updated: ' + _controller.termsUpdatedAtDoc.value!.toDate().toString(),
+                      'Updated: ${_controller.termsUpdatedAtDoc.value!.toDate()}',
                       style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                 ],

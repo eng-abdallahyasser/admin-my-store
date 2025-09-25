@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:developer' as developer;
+import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:admin_my_store/app/models/app_notification.dart';
 import 'package:admin_my_store/app/utils/http_utils.dart';
@@ -117,7 +117,7 @@ class NotificationRepository {
 
       // Return null if no user is signed in
       if (user == null) {
-        print('No user is currently signed in.');
+        log('No user is currently signed in.');
         return null;
       }
 
@@ -125,11 +125,11 @@ class NotificationRepository {
       final idToken = await user.getIdToken();
 
       // Send this token to your backend
-      print('User ID Token: $idToken');
+      log('User ID Token: $idToken');
       return idToken;
     } catch (e) {
       // Handle any errors
-      print('Error getting ID token: $e');
+      log('Error getting ID token: $e');
       return null;
     }
   }
