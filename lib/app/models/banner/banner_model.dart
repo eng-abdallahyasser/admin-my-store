@@ -86,18 +86,18 @@ class Banner {
   String? title;
   String? type;
   String? image;
-  String? link;
+  String? productId;
   Store? store;
   Item? item;
 
-  Banner({this.id, this.title, this.type, this.image,this.link, this.store, this.item});
+  Banner({this.id, this.title, this.type, this.image, this.productId, this.store, this.item});
 
   Banner.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     title = json['title'];
     type = json['type'];
     image = json['image'];
-    link = json['link'];
+    productId = json['productId'];
     store = json['store'] != null ? Store.fromJson(json['store']) : null;
     item = json['item'] != null ? Item.fromJson(json['item']) : null;
   }
@@ -108,7 +108,7 @@ class Banner {
     data['title'] = title;
     data['type'] = type;
     data['image'] = image;
-    data['link'] = link;
+    data['productId'] = productId;
     if (store != null) {
       data['store'] = store!.toJson();
     }

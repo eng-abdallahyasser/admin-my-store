@@ -52,7 +52,7 @@ class BannerListScreen extends StatelessWidget {
                 return BannerCard(
                   title: banner.title ?? 'Untitled',
                   imageUrl: banner.image ?? '',
-                  subtitle: banner.link ?? '',
+                  subtitle:'',
                   onEdit: () async {
                     await controller.initializeForEdit(banner);
                     Get.toNamed(Routes.editBanner, arguments: banner);

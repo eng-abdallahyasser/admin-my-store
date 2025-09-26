@@ -12,7 +12,7 @@ import 'package:admin_my_store/app/models/product.dart';
 import 'package:admin_my_store/app/repo/product_repository.dart';
 
 class ProductController extends GetxController {
-  final ProductRepository _productRepository = ProductRepository();
+  final ProductRepository _productRepository = Get.find<ProductRepository>();
   final RxList<Product> products = <Product>[].obs;
   final RxList<Category> categories = <Category>[].obs;
   final Rx<Uint8List?> coverImage = Rx<Uint8List?>(null);

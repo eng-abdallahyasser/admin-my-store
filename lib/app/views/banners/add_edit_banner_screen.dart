@@ -1,4 +1,5 @@
 import 'package:admin_my_store/app/controllers/banner_controller.dart';
+import 'package:admin_my_store/app/controllers/product_controller.dart';
 import 'package:admin_my_store/app/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -9,8 +10,94 @@ class AddEditBannerScreen extends StatelessWidget {
   AddEditBannerScreen({super.key});
 
   final BannerController controller = Get.find<BannerController>();
+  final ProductController productController = Get.find<ProductController>();
 
   bool get _isEdit => Get.currentRoute == Routes.editBanner;
+
+  final RxString _productSearchQuery = ''.obs;
+
+  // Observable for banner type to make it reactive
+  final RxString _bannerType = ''.obs;
+
+  void _showProductPicker() {
+    _productSearchQuery.value = '';
+    showDialog(
+      context: Get.context!,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Product'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 400,
+          child: Obx(() {
+            if (productController.isLoading.value) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (productController.products.isEmpty) {
+              return const Center(child: Text('No products available'));
+            }
+
+            // Filter products based on search query
+            final filteredProducts = _productSearchQuery.value.isEmpty
+                ? productController.products
+                : productController.products.where((product) {
+                    return product.title.toLowerCase().contains(_productSearchQuery.value.toLowerCase()) ||
+                           product.id.toLowerCase().contains(_productSearchQuery.value.toLowerCase());
+                  }).toList();
+
+            if (filteredProducts.isEmpty) {
+              return const Center(child: Text('No products match your search'));
+            }
+
+            return Column(
+              children: [
+                TextField(
+                  decoration: const InputDecoration(
+                    hintText: 'Search products...',
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (value) {
+                    _productSearchQuery.value = value;
+                  },
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: filteredProducts.length,
+                    itemBuilder: (context, index) {
+                      final product = filteredProducts[index];
+                      return ListTile(
+                        leading: product.imagesUrl.isNotEmpty
+                            ? Image.network(
+                                product.imagesUrl[0],
+                                width: 40,
+                                height: 40,
+                                fit: BoxFit.cover,
+                              )
+                            : const Icon(Icons.image, size: 40),
+                        title: Text(product.title),
+                        subtitle: Text('ID: ${product.id}'),
+                        onTap: () {
+                          controller.productIdController.text = product.id;
+                          Get.back();
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          }),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
 
   models.Banner? get _argBanner {
     final arg = Get.arguments;
@@ -24,15 +111,16 @@ class AddEditBannerScreen extends StatelessWidget {
     final banner = _argBanner;
     if (_isEdit && banner != null) {
       controller.initializeForEdit(banner);
+      // Set the observable banner type
+      _bannerType.value = banner.type ?? '';
     } else {
       // Ensure fresh state for Add mode
       controller.clearForm();
+      _bannerType.value = '';
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEdit ? 'Edit Banner' : 'Add Banner'),
-      ),
+      appBar: AppBar(title: Text(_isEdit ? 'Edit Banner' : 'Add Banner')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -52,21 +140,73 @@ class AddEditBannerScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      TextField(
-                        controller: controller.linkController,
+                      DropdownButtonFormField<String>(
+                        initialValue: _bannerType.value.isEmpty ? null : _bannerType.value,
                         decoration: const InputDecoration(
-                          labelText: 'Link (optional)',
+                          labelText: 'Banner Type',
                           border: OutlineInputBorder(),
                         ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'product_linked_banner',
+                            child: Text('Product Linked Banner'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'not_linked_banner',
+                            child: Text('Not Linked Banner'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          _bannerType.value = value ?? '';
+                          controller.typeController.text = value ?? '';
+                          // Clear product ID if switching to not linked banner
+                          if (value == 'not_linked_banner') {
+                            controller.productIdController.clear();
+                          }
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please select a banner type';
+                          }
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 12),
-                      TextField(
-                        controller: controller.typeController,
-                        decoration: const InputDecoration(
-                          labelText: 'Type (optional)',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
+                      Obx(() {
+                        final isProductLinked = _bannerType.value == 'product_linked_banner';
+                        return Column(
+                          children: [
+                            TextField(
+                              controller: controller.productIdController,
+                              decoration: InputDecoration(
+                                labelText: isProductLinked
+                                    ? 'Product ID (required)'
+                                    : 'Product ID (optional)',
+                                border: const OutlineInputBorder(),
+                                suffixIcon: isProductLinked
+                                    ? IconButton(
+                                        icon: const Icon(Icons.search),
+                                        onPressed: _showProductPicker,
+                                      )
+                                    : null,
+                              ),
+                              readOnly: isProductLinked,
+                              onTap: isProductLinked ? _showProductPicker : null,
+                            ),
+                            if (isProductLinked)
+                              const Padding(
+                                padding: EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  'Tap to select a product',
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      }),
                     ],
                   ),
                 ),
@@ -89,7 +229,11 @@ class AddEditBannerScreen extends StatelessWidget {
                                 : (url != null && url.isNotEmpty)
                                     ? Image.network(url, fit: BoxFit.cover)
                                     : const Center(
-                                        child: Icon(Icons.image, size: 48, color: Colors.grey),
+                                        child: Icon(
+                                          Icons.image,
+                                          size: 48,
+                                          color: Colors.grey,
+                                        ),
                                       ),
                           ),
                           Padding(
@@ -113,12 +257,12 @@ class AddEditBannerScreen extends StatelessWidget {
                                   ),
                               ],
                             ),
-                          )
+                          ),
                         ],
                       );
                     }),
                   ),
-                )
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -139,7 +283,7 @@ class AddEditBannerScreen extends StatelessWidget {
                   label: Text(_isEdit ? 'Save Changes' : 'Add Banner'),
                 ),
               );
-            })
+            }),
           ],
         ),
       ),

@@ -16,7 +16,7 @@ class BannerController extends GetxController {
 
   // Form
   late TextEditingController titleController;
-  late TextEditingController linkController;
+  late TextEditingController productIdController;
   late TextEditingController typeController;
 
   final Rx<Uint8List?> imageBytes = Rx<Uint8List?>(null);
@@ -26,7 +26,7 @@ class BannerController extends GetxController {
   void onInit() {
     super.onInit();
     titleController = TextEditingController();
-    linkController = TextEditingController();
+    productIdController = TextEditingController();
     typeController = TextEditingController();
     loadBanners();
   }
@@ -34,7 +34,7 @@ class BannerController extends GetxController {
   @override
   void onClose() {
     titleController.dispose();
-    linkController.dispose();
+    productIdController.dispose();
     typeController.dispose();
     super.onClose();
   }
@@ -63,13 +63,21 @@ class BannerController extends GetxController {
         Get.snackbar('Validation', 'Please select an image');
         return;
       }
+
+      // Validate productId if banner type is product_linked_banner
+      if (typeController.text.trim() == 'product_linked_banner' &&
+          productIdController.text.trim().isEmpty) {
+        Get.snackbar('Validation', 'Product ID is required for product linked banners');
+        return;
+      }
+
       isLoading(true);
       final imageUrl = await _uploadImage(imageBytes.value!);
       final banner = models.Banner(
         title: titleController.text.trim(),
         type: typeController.text.trim().isEmpty ? null : typeController.text.trim(),
         image: imageUrl,
-        link: linkController.text.trim().isEmpty ? null : linkController.text.trim(),
+        productId: productIdController.text.trim().isEmpty ? null : productIdController.text.trim(),
       );
       await _repo.addBanner(banner);
       await loadBanners();
@@ -85,7 +93,7 @@ class BannerController extends GetxController {
 
   Future<void> initializeForEdit(models.Banner banner) async {
     titleController.text = banner.title ?? '';
-    linkController.text = banner.link ?? '';
+    productIdController.text = banner.productId ?? '';
     typeController.text = banner.type ?? '';
     existingImageUrl.value = banner.image;
     imageBytes.value = null;
@@ -102,7 +110,7 @@ class BannerController extends GetxController {
         id: id,
         title: titleController.text.trim(),
         type: typeController.text.trim().isEmpty ? null : typeController.text.trim(),
-        link: linkController.text.trim().isEmpty ? null : linkController.text.trim(),
+        productId: productIdController.text.trim().isEmpty ? null : productIdController.text.trim(),
         image: imageUrl,
       );
       await _repo.updateBanner(id, updated);
@@ -139,7 +147,7 @@ class BannerController extends GetxController {
 
   void clearForm() {
     titleController.clear();
-    linkController.clear();
+    productIdController.clear();
     typeController.clear();
     imageBytes.value = null;
     existingImageUrl.value = null;
