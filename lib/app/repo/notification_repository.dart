@@ -63,7 +63,21 @@ class NotificationRepository {
     Map<String, dynamic>? data,
     String? imageUrl,
     String? type,
+    String? userId, // Add userId parameter to identify the target user
   }) async {
+    final notification = AppNotification(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: title,
+      body: body,
+      data: data ?? {},
+      timestamp: DateTime.now(),
+    );
+    log('user id: $userId');
+    // Save to specific user's notifications if userId is provided
+    if (userId != null && userId.isNotEmpty) {
+      await _saveUserNotification(userId, notification);
+    }
+
     await _postNotification(
       payload: {
         'token': token,
@@ -85,6 +99,19 @@ class NotificationRepository {
     Map<String, dynamic>? data,
     String? imageUrl,
   }) async {
+    final notification = AppNotification(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: title,
+      body: body,
+      data: data ?? {},
+      timestamp: DateTime.now(),
+    );
+
+    // Save to all_users_notifications if the topic is 'all-users'
+    if (topic == 'all-users') {
+      await _saveAllUsersNotification(notification);
+    }
+
     await _postNotification(
       payload: {
         'topic': topic,
@@ -263,5 +290,41 @@ class NotificationRepository {
       }
     }
     return sanitized;
+  }
+
+  /// Saves a notification to the all_users_notifications collection
+  Future<void> _saveAllUsersNotification(AppNotification notification) async {
+    try {
+      await _db
+          .collection('all_users_notifications')
+          .doc(notification.id)
+          .set(notification.toMap());
+    } catch (e) {
+      developer.log(
+        'Error saving notification to all_users_notifications: $e',
+        name: 'NotificationRepository',
+        error: e,
+      );
+      rethrow;
+    }
+  }
+
+  /// Saves a notification to a specific user's notifications subcollection
+  Future<void> _saveUserNotification(String userId, AppNotification notification) async {
+    try {
+      await _db
+          .collection('users')
+          .doc(userId)
+          .collection('notifications')
+          .doc(notification.id)
+          .set(notification.toMap());
+    } catch (e) {
+      developer.log(
+        'Error saving notification to user $userId: $e',
+        name: 'NotificationRepository',
+        error: e,
+      );
+      rethrow;
+    }
   }
 }

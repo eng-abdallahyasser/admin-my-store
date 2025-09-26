@@ -34,8 +34,8 @@ class OrderCard extends StatelessWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        'Order #${order.orderNumber}',
-                        style: theme.textTheme.titleMedium?.copyWith(
+                        'Order # ${order.orderNumber}',
+                        style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -89,7 +89,7 @@ class OrderCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 8),
-                        
+
                         Text(
                           '\$${_calculateTotal().toStringAsFixed(2)}',
                           style: theme.textTheme.titleMedium?.copyWith(
@@ -105,29 +105,6 @@ class OrderCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (!isMobile) const SizedBox(height: 16),
-                if (!isMobile)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      OutlinedButton(
-                        onPressed: () => Get.toNamed(
-                          Routes.orderDetails,
-                          arguments: order.id,
-                        ),
-                        child: const Text('View Details'),
-                      ),
-                      const SizedBox(width: 12),
-                      if (order.status.toLowerCase() != 'completed')
-                        ElevatedButton(
-                          onPressed: () => _updateOrderStatus(),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green.shade600,
-                          ),
-                          child: const Text('Mark Completed'),
-                        ),
-                    ],
-                  ),
               ],
             ),
           ),
@@ -155,31 +132,5 @@ class OrderCard extends StatelessWidget {
 
   double _calculateTotal() {
     return order.items.fold(0, (sum, item) => sum + item.totalPrice);
-  }
-
-  void _updateOrderStatus() {
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Update Order Status'),
-        content: const Text(
-          'Are you sure you want to mark this order as completed?',
-        ),
-        actions: [
-          TextButton(onPressed: Get.back, child: const Text('Cancel')),
-          TextButton(
-            onPressed: () {
-              // Implement status update logic
-              Get.back();
-              Get.snackbar(
-                'Success',
-                'Order marked as completed',
-                snackPosition: SnackPosition.BOTTOM,
-              );
-            },
-            child: const Text('Confirm', style: TextStyle(color: Colors.green)),
-          ),
-        ],
-      ),
-    );
   }
 }

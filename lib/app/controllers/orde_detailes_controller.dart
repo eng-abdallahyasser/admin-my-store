@@ -104,6 +104,7 @@ class OrderDetailsController extends GetxController {
           body: body,
           data: payload,
           type: type,
+          userId: currentOrder.userId,
         );
       }
 
