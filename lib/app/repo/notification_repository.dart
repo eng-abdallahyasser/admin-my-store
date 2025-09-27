@@ -105,6 +105,7 @@ class NotificationRepository {
       body: body,
       data: data ?? {},
       timestamp: DateTime.now(),
+      read: true,
     );
 
     // Save to all_users_notifications if the topic is 'all-users'

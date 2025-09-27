@@ -30,7 +30,7 @@ class OrderController extends GetxController {
     'Processing',
     'Shipped',
     'Delivered',
-    'Cancelled'
+    'Cancelled',
   ];
 
   @override
@@ -39,6 +39,8 @@ class OrderController extends GetxController {
     _startListening();
     _alertPlayer = AudioPlayer();
     _alertPlayer!.setReleaseMode(ReleaseMode.loop);
+    // Log controller identity to help detect duplicate instances at runtime
+    log('OrderController initialized: ${identityHashCode(this)}');
     // On mobile/desktop native, we can prewarm immediately.
     // On web, defer prewarm until a user gesture calls initializeSoundIfNeeded().
     if (!kIsWeb) {
@@ -58,9 +60,9 @@ class OrderController extends GetxController {
     if (_alerting) return;
     _alerting = true;
     await _raiseAlertVolume();
-
     // Show blocking dialog until user acknowledges
-    if (!Get.isDialogOpen!) {
+    // Use safe null-aware check for dialog open state
+    if (Get.isDialogOpen != true) {
       Get.dialog(
         AlertDialog(
           title: const Text('New Order Received'),
@@ -79,14 +81,24 @@ class OrderController extends GetxController {
 
   Future<void> acknowledgeNewOrders() async {
     try {
-      // Lower volume back to 0.0 but keep looping to maintain autoplay allowance
-      log('Acknowledging new orders, setting volume to 0.0');
-      await _alertPlayer?.setVolume(0.0);
+      // Acknowledge: for web we keep the loop playing at volume 0.0 to preserve
+      // autoplay allowance; for native platforms it's safer to stop the player.
+      log('Acknowledging new orders (controller ${identityHashCode(this)}');
+      if (kIsWeb) {
+        await _alertPlayer?.setVolume(0.0);
+      } else {
+        // Stop playback to ensure the sound does not restart from another
+        // surviving player instance. If needed, re-prewarm later.
+        await _alertPlayer?.stop();
+      }
     } catch (e, s) {
-      log('Error setting volume to 0 in acknowledgeNewOrders: $e', stackTrace: s);
+      log(
+        'Error setting volume to 0 in acknowledgeNewOrders: $e',
+        stackTrace: s,
+      );
     }
     _alerting = false;
-    if (Get.isDialogOpen!) Get.back();
+    if (Get.isDialogOpen == true) Get.back();
   }
 
   Future<void> _prewarmAlertLoop() async {
@@ -155,9 +167,10 @@ class OrderController extends GetxController {
           }
 
           // Detect newly added orders
-          final addedChanges = snapshot.docChanges
-              .where((c) => c.type == DocumentChangeType.added)
-              .toList();
+          final addedChanges =
+              snapshot.docChanges
+                  .where((c) => c.type == DocumentChangeType.added)
+                  .toList();
 
           if (addedChanges.isNotEmpty) {
             // Start sound alert (looping) and show blocking popup until user action
@@ -176,7 +189,9 @@ class OrderController extends GetxController {
   Future<void> loadOrders() async {
     try {
       isLoading(true);
-      final response = await _repository.getOrders(statusFilters: selectedStatus);
+      final response = await _repository.getOrders(
+        statusFilters: selectedStatus,
+      );
       orders.value = response;
     } catch (e) {
       log(e.toString());

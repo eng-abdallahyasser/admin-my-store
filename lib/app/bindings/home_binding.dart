@@ -10,6 +10,11 @@ class HomeBinding extends Bindings {
 
     // Use fenix: true to make the controller persistent across the app session,
     // ensuring it's always listening for new orders.
-    Get.lazyPut<OrderController>(() => OrderController(), fenix: true);
+    // Guard against double-registration: if another binding already registered
+    // the controller (for example OrderBinding uses Get.put(..., permanent: true)),
+    // don't register again.
+    if (!Get.isRegistered<OrderController>()) {
+      Get.lazyPut<OrderController>(() => OrderController(), fenix: true);
+    }
   }
 }
