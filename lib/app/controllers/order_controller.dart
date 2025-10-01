@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:admin_my_store/app/models/my_order.dart';
 import 'package:admin_my_store/app/repo/order_repository.dart';
+import 'package:admin_my_store/app/utils/web_audio_helper.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +22,7 @@ class OrderController extends GetxController {
   late StreamSubscription<QuerySnapshot> _ordersSubscription;
   bool _initialized = false; // avoid notifying on initial snapshot
   AudioPlayer? _alertPlayer; // used to play looping alert sound
+  WebAudioHelper? _webAudioHelper; // web-specific audio fallback
   bool _alerting = false;
   // Exposed flag so UI can prompt user to enable sound on web
   final RxBool soundReady = false.obs;
@@ -39,6 +41,12 @@ class OrderController extends GetxController {
     _startListening();
     _alertPlayer = AudioPlayer();
     _alertPlayer!.setReleaseMode(ReleaseMode.loop);
+    
+    // Initialize web audio helper for web platform
+    if (kIsWeb) {
+      _webAudioHelper = WebAudioHelper();
+    }
+    
     // Log controller identity to help detect duplicate instances at runtime
     log('OrderController initialized: ${identityHashCode(this)}');
     // On mobile/desktop native, we can prewarm immediately.
@@ -53,6 +61,7 @@ class OrderController extends GetxController {
   void onClose() {
     _ordersSubscription.cancel();
     _alertPlayer?.dispose();
+    _webAudioHelper?.dispose();
     super.onClose();
   }
 
@@ -86,6 +95,7 @@ class OrderController extends GetxController {
       log('Acknowledging new orders (controller ${identityHashCode(this)}');
       if (kIsWeb) {
         await _alertPlayer?.setVolume(0.0);
+        await _webAudioHelper?.stop();
       } else {
         // Stop playback to ensure the sound does not restart from another
         // surviving player instance. If needed, re-prewarm later.
@@ -107,7 +117,13 @@ class OrderController extends GetxController {
       _alertPlayer ??= AudioPlayer();
       await _alertPlayer!.setReleaseMode(ReleaseMode.loop);
       await _alertPlayer!.setVolume(0.0);
-      await _alertPlayer!.play(AssetSource('sounds/new_order.mp3'));
+      
+      // For web, use full asset path to ensure proper resolution after build
+      if (kIsWeb) {
+        await _alertPlayer!.play(AssetSource('assets/sounds/new_order.mp3'));
+      } else {
+        await _alertPlayer!.play(AssetSource('sounds/new_order.mp3'));
+      }
       log('Audio prewarm successful.');
     } catch (e, s) {
       log('Error prewarming alert loop: $e', stackTrace: s);
@@ -119,7 +135,15 @@ class OrderController extends GetxController {
   Future<void> initializeSoundIfNeeded() async {
     if (soundReady.value) return;
     log('Initializing sound for web via user gesture...');
+    
+    // Try to initialize both audio players
     await _prewarmAlertLoop();
+    
+    // Initialize web audio helper as fallback
+    if (kIsWeb && _webAudioHelper != null) {
+      await _webAudioHelper!.initialize();
+    }
+    
     soundReady.value = true;
     try {
       Get.snackbar('Sound enabled', 'Audio alerts will play for new orders');
@@ -131,7 +155,15 @@ class OrderController extends GetxController {
   Future<void> _raiseAlertVolume() async {
     try {
       log('New order received, raising alert volume to 1.0...');
+      
+      // Try audioplayers first
       await _alertPlayer?.setVolume(1.0);
+      
+      // Also try web audio helper on web platform
+      if (kIsWeb && _webAudioHelper != null && _webAudioHelper!.isInitialized) {
+        await _webAudioHelper!.play();
+      }
+      
       log('Audio volume raised successfully.');
     } catch (e, s) {
       log('Error raising alert volume: $e', stackTrace: s);
