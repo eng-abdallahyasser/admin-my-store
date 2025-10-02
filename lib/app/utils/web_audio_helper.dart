@@ -1,34 +1,36 @@
 import 'dart:async';
 import 'dart:developer';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'dart:js_interop';
 import 'package:flutter/foundation.dart';
+import 'package:web/web.dart' as web;
 
 /// Web-specific audio helper using HTML5 Audio API
 /// This provides a more reliable fallback for web deployments
 class WebAudioHelper {
-  html.AudioElement? _audioElement;
+  web.HTMLAudioElement? _audioElement;
   bool _isInitialized = false;
   bool _isPlaying = false;
 
   /// Initialize the audio player with user gesture
   Future<bool> initialize() async {
     if (!kIsWeb) return false;
-    
+
     try {
       log('Initializing WebAudioHelper...');
-      
+
       // Create audio element with the correct asset path for web build
-      _audioElement = html.AudioElement('assets/sounds/new_order.mp3');
+      // Use the full path as it appears in the build output
+      _audioElement = web.HTMLAudioElement();
+      _audioElement!.src = 'assets/assets/sounds/new_order.mp3';
       _audioElement!.loop = true;
       _audioElement!.volume = 0.0;
-      
+
       // Load the audio
       _audioElement!.load();
-      
+
       // Try to play silently to unlock autoplay
-      await _audioElement!.play();
-      
+      await _audioElement!.play().toDart;
+
       _isInitialized = true;
       log('WebAudioHelper initialized successfully');
       return true;
@@ -48,7 +50,7 @@ class WebAudioHelper {
     try {
       _audioElement!.volume = 1.0;
       if (_audioElement!.paused) {
-        await _audioElement!.play();
+        await _audioElement!.play().toDart;
       }
       _isPlaying = true;
       log('WebAudioHelper: Playing sound');

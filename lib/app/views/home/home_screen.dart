@@ -21,8 +21,8 @@ class HomeScreen extends StatelessWidget {
         isMobile
             ? 2
             : screenWidth < 900
-            ? 3
-            : 4;
+            ? 4
+            : 5;
     final padding = isMobile ? 10.0 : 20.0;
     final iconSize = isMobile ? 32.0 : 40.0;
     final titleSize = isMobile ? 16.0 : 18.0;

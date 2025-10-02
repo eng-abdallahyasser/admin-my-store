@@ -41,12 +41,12 @@ class OrderController extends GetxController {
     _startListening();
     _alertPlayer = AudioPlayer();
     _alertPlayer!.setReleaseMode(ReleaseMode.loop);
-    
+
     // Initialize web audio helper for web platform
     if (kIsWeb) {
       _webAudioHelper = WebAudioHelper();
     }
-    
+
     // Log controller identity to help detect duplicate instances at runtime
     log('OrderController initialized: ${identityHashCode(this)}');
     // On mobile/desktop native, we can prewarm immediately.
@@ -117,11 +117,15 @@ class OrderController extends GetxController {
       _alertPlayer ??= AudioPlayer();
       await _alertPlayer!.setReleaseMode(ReleaseMode.loop);
       await _alertPlayer!.setVolume(0.0);
-      
-      // For web, use full asset path to ensure proper resolution after build
+
+      // On web, Flutter places assets at /assets/assets/... path
+      // Use UrlSource for web to avoid audioplayers adding extra 'assets/' prefix
       if (kIsWeb) {
-        await _alertPlayer!.play(AssetSource('assets/sounds/new_order.mp3'));
+        await _alertPlayer!.play(
+          UrlSource('/assets/assets/sounds/new_order.mp3'),
+        );
       } else {
+        // On native platforms, use AssetSource which handles path correctly
         await _alertPlayer!.play(AssetSource('sounds/new_order.mp3'));
       }
       log('Audio prewarm successful.');
@@ -135,15 +139,15 @@ class OrderController extends GetxController {
   Future<void> initializeSoundIfNeeded() async {
     if (soundReady.value) return;
     log('Initializing sound for web via user gesture...');
-    
+
     // Try to initialize both audio players
     await _prewarmAlertLoop();
-    
+
     // Initialize web audio helper as fallback
     if (kIsWeb && _webAudioHelper != null) {
       await _webAudioHelper!.initialize();
     }
-    
+
     soundReady.value = true;
     try {
       Get.snackbar('Sound enabled', 'Audio alerts will play for new orders');
@@ -155,15 +159,15 @@ class OrderController extends GetxController {
   Future<void> _raiseAlertVolume() async {
     try {
       log('New order received, raising alert volume to 1.0...');
-      
+
       // Try audioplayers first
       await _alertPlayer?.setVolume(1.0);
-      
+
       // Also try web audio helper on web platform
       if (kIsWeb && _webAudioHelper != null && _webAudioHelper!.isInitialized) {
         await _webAudioHelper!.play();
       }
-      
+
       log('Audio volume raised successfully.');
     } catch (e, s) {
       log('Error raising alert volume: $e', stackTrace: s);
